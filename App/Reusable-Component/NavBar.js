@@ -65,7 +65,7 @@ const TabItem = ({ tab, isActive, onPress, badgeCount }) => {
       <Animated.View style={[styles.iconWrapper, { transform: [{ scale }] }]}>
         {/* Active pill behind icon */}
         {isActive && <View style={styles.activePill} />}
-        <MaterialIcons name={tab.icon} size={ms(24)} color={color} />
+        <MaterialIcons name={tab.icon} size={ms(28)} color={color} />
 
         {/* Badge */}
         {!!badgeCount && (
@@ -77,14 +77,6 @@ const TabItem = ({ tab, isActive, onPress, badgeCount }) => {
         )}
       </Animated.View>
 
-      <CText
-        variant="label"
-        weight={isActive ? 'semibold' : 'regular'}
-        color={color}
-        style={styles.tabLabel}
-      >
-        {tab.label}
-      </CText>
     </TouchableOpacity>
   );
 };
@@ -136,7 +128,7 @@ const NavBar = ({
     <View
       style={[
         styles.container,
-        { paddingBottom: insets.bottom + vs(4) },
+        { paddingBottom: Math.max(insets.bottom, vs(10)) + vs(4) },
         style,
       ]}
     >
@@ -157,10 +149,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    paddingTop: vs(10),
+    paddingTop: vs(20),
     borderTopWidth: 1,
     borderTopColor: Colors.border,
-    shadowColor: '#000',
+    shadowColor: '#2e2e2eff',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -175,14 +167,14 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: ms(44),
+    width: ms(50),
     height: ms(32),
   },
   activePill: {
     position: 'absolute',
-    width: ms(44),
-    height: ms(30),
-    borderRadius: ms(15),
+    // width: ms(45),
+    // height: ms(37),
+    borderRadius: ms(30),
     backgroundColor: Colors.primaryGhost,
   },
   tabLabel: {

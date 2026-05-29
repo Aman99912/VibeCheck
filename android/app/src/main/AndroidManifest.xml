@@ -23,5 +23,10 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      
+      <!-- Dummy API Key for React Native Maps to initialize without crashing. OSM tiles will cover the Google Maps watermark. -->
+      <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="DUMMY_API_KEY_TO_PREVENT_CRASH"/>
     </application>
 </manifest>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { Colors, ms } from '../../Reusable-Component';
+import { Colors, ms, NavBar } from '../../Reusable-Component';
 
 import ActivityScreen from '../ACTIVITY';
 import MapScreen from '../MAP';
@@ -13,34 +13,31 @@ const Tab = createBottomTabNavigator();
 const MainTabs = ({ onLogout }) => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      tabBar={(props) => <NavBar {...props} />}
+      screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textMuted,
-        tabBarShowLabel: true,
-        tabBarStyle: {
-          backgroundColor: Colors.white,
-          borderTopWidth: 1,
-          borderTopColor: Colors.border,
-          height: ms(60),
-          paddingBottom: ms(8),
-          paddingTop: ms(8),
-        },
-        tabBarIcon: ({ color, size }) => {
-          let iconName;
-          if (route.name === 'Activity') iconName = 'local-activity';
-          else if (route.name === 'Map') iconName = 'map';
-          else if (route.name === 'Highlights') iconName = 'star';
-          else if (route.name === 'Profile') iconName = 'person';
-          
-          return <MaterialIcons name={iconName} size={size} color={color} />;
-        },
-      })}
+      }}
     >
-      <Tab.Screen name="Activity" component={ActivityScreen} />
-      <Tab.Screen name="Map" component={MapScreen} />
-      <Tab.Screen name="Highlights" component={HighlightsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Map" 
+        component={MapScreen} 
+        options={{ tabBarIcon: 'home' }} 
+      />
+      <Tab.Screen 
+        name="Activity" 
+        component={ActivityScreen} 
+        options={{ tabBarIcon: 'favorite-border' }} 
+      />
+      <Tab.Screen 
+        name="Highlights" 
+        component={HighlightsScreen} 
+        options={{ tabBarIcon: 'play-circle-outline' }} 
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen} 
+        options={{ tabBarIcon: 'person-outline' }} 
+      />
     </Tab.Navigator>
   );
 };

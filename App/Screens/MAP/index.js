@@ -1,15 +1,33 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import MapRender from './MAP-COMPONENTS/MapRender';
+import LocationSelector from './MAP-COMPONENTS/LocationSelector';
+import FilterButton from './MAP-COMPONENTS/FilterButton';
+import CreatePinButton from './MAP-COMPONENTS/CreatePinButton';
 
-const MapScreen = () => (
-  <View style={styles.container}>
-    <Text style={styles.text}>Map Screen (App/Screens/MAP/index.js)</Text>
-  </View>
-);
+const MapScreen = () => {
+  return (
+    <View style={styles.container}>
+      {/* Background Map layer */}
+      <MapRender />
+
+      {/* Floating UI Overlays */}
+      <LocationSelector onPress={() => console.log('Location pressed')} />
+      <FilterButton onPress={() => console.log('Filter pressed')} />
+      
+      <CreatePinButton 
+        onCreatePress={() => console.log('Create pin')}
+        onRecenterPress={() => console.log('Recenter')}
+      />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  text: { fontSize: 16, fontWeight: 'bold' }
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
 });
 
 export default MapScreen;

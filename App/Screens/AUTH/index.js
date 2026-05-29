@@ -7,7 +7,7 @@
 import React from 'react';
 import { StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LoginScreen from './AUTH-SCREENS/Login';
+import LoginScreen from './AUTH-SCREENS/login';
 import OtpScreen from './AUTH-SCREENS/otp';
 import useLoginLogic from './AUTH-COMPONENT/loginLogic';
 import { Colors } from '../../Reusable-Component';
