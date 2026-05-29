@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import MapView, { Marker, UrlTile, PROVIDER_DEFAULT } from 'react-native-maps';
 import PinBox from './PinBox';
 import { Colors } from '../../../Reusable-Component';
@@ -29,7 +29,7 @@ const MapRender = () => {
         style={styles.map}
         provider={PROVIDER_DEFAULT}
         initialRegion={initialRegion}
-        mapType="none" // Important: Hides the default Google Maps tiles to show OSM
+        mapType={Platform.OS === 'android' ? 'none' : 'standard'} // 'none' is only supported on Android to hide base Google Maps tiles. iOS MapKit requires 'standard' with shouldReplaceMapContent on UrlTile.
         showsUserLocation={true}
         showsMyLocationButton={false}
         showsCompass={false}
@@ -38,6 +38,7 @@ const MapRender = () => {
         {/* OpenStreetMap Tiles for Free Map Rendering */}
         <UrlTile
           urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          shouldReplaceMapContent={true} // Replaces base Apple Maps tiles on iOS
           maximumZ={19}
           flipY={false}
         />
