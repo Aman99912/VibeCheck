@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import AuthFlow from './App/Screens/AUTH';
-import MapScreen from './App/Screens/MAP';
+import MainTabs from './App/Screens/MAIN';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -17,7 +17,7 @@ function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         {isLoggedIn ? (
-          <MapScreen onLogout={() => setIsLoggedIn(false)} />
+          <MainTabs onLogout={() => setIsLoggedIn(false)} />
         ) : (
           <AuthFlow onLoginSuccess={() => setIsLoggedIn(true)} />
         )}
