@@ -1,0 +1,1 @@
+// HIGHLIGHTS screen entry point
