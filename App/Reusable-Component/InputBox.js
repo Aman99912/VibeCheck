@@ -110,9 +110,7 @@ const InputBox = React.forwardRef(({
 
   const bgColor = disabled
     ? Colors.surface
-    : focused
-    ? Colors.white
-    : Colors.surface;
+    : Colors.white;
 
   // ─── Icons ─────────────────────────────────────────────────────────────────
   const iconName   = leftIcon ?? DEFAULT_ICON[type] ?? 'edit';
@@ -128,7 +126,7 @@ const InputBox = React.forwardRef(({
 
       {/* Label */}
       {label ? (
-        <CText variant="label" weight="medium" color={Colors.textSecondary} style={styles.label}>
+        <CText variant="label" weight="semibold" color={Colors.textSecondary} style={styles.label}>
           {label}
         </CText>
       ) : null}
@@ -151,17 +149,11 @@ const InputBox = React.forwardRef(({
         {/* Country Code Selector (Phone Input) */}
         {countryCode && (
           <View style={styles.countryCodeContainer}>
-            <TouchableOpacity
-              onPress={onCountryCodePress}
-              disabled={disabled || !onCountryCodePress}
-              style={styles.countryCodeButton}
-              activeOpacity={0.7}
-            >
+            <View style={[styles.countryCodeButton, { paddingRight: ms(8) }]}>
               <CText variant="body" weight="semibold" color={Colors.textPrimary}>
                 {countryCode}
               </CText>
-              <MaterialIcons name="keyboard-arrow-down" size={ms(18)} color={Colors.gray600} style={styles.countryChevron} />
-            </TouchableOpacity>
+            </View>
             <View style={styles.verticalDivider} />
           </View>
         )}
@@ -302,9 +294,7 @@ export const OTPGroupInput = ({
 
           const boxBgColor = disabled
             ? Colors.surface
-            : isFocused
-            ? Colors.white
-            : Colors.surface;
+            : Colors.white;
 
           return (
             <TextInput
@@ -361,7 +351,7 @@ const styles = StyleSheet.create({
   },
   inputRowSingle: {
     alignItems: 'center',
-    minHeight: vs(52),
+    minHeight: vs(58),
   },
   inputRowMultiline: {
     alignItems: 'flex-start',
@@ -395,7 +385,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: normFont(15),
+    fontSize: normFont(16),
+    fontFamily: 'Poppins-Medium',
     color: Colors.textPrimary,
     paddingVertical: Platform.OS === 'ios' ? vs(12) : vs(8),
   },
@@ -441,7 +432,7 @@ const otpStyles = StyleSheet.create({
   },
   box: {
     flex: 1,
-    height: vs(52),
+    height: vs(58),
     borderWidth: 1.5,
     borderRadius: ms(12),
     fontSize: normFont(20),

@@ -6,7 +6,7 @@
 
 const Colors = {
   // ─── Brand / Primary ───────────────────────────────────────────────────────
-  primary: '#246BFD',        // main brand blue
+  primary: '#856CE2',        // main brand blue
   primaryDark: '#1A56DB',
   primaryLight: '#E9F0FF',
   primaryGhost: 'rgba(36, 107, 253, 0.08)', // semi-transparent brand blue (8%)

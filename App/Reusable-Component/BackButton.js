@@ -64,7 +64,7 @@ const BackButton = ({
       accessibilityLabel="Go back"
       accessibilityRole="button"
     >
-      <MaterialIcons name="arrow-back" size={size} color={color} />
+      <MaterialIcons name="chevron-left" size={size + 6} color={color} style={styles.icon} />
       {label ? (
         <CText
           variant="body"

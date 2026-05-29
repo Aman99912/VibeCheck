@@ -233,7 +233,8 @@ const AppButton = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderWidth: 1.5,
+    borderWidth: ms(1.5),
+    
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
