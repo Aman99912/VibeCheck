@@ -183,15 +183,10 @@ const styles = StyleSheet.create({
     width: ms(32),
     height: ms(32),
   },
-  spacer: {
-    width: ms(64), // Space for the floating button
-  },
-  floatingButtonContainer: {
-    ...StyleSheet.absoluteFillObject,
+  centerButtonWrapper: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
-    paddingBottom: vs(8), // adjust for safe area offset so it sits visually centered
   },
   centerButton: {
     width: ms(52),
