@@ -17,6 +17,7 @@ const MapScreen = () => {
   const [locationName, setLocationName] = useState('Fetching location...');
 
   const fetchLocation = () => {
+    setLocationName('Fetching location...');
     Geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -24,7 +25,12 @@ const MapScreen = () => {
 
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+            {
+              headers: {
+                'User-Agent': 'VibeMatch/1.0 (Mobile App)'
+              }
+            }
           );
           const data = await response.json();
           if (data && data.address) {
@@ -39,8 +45,40 @@ const MapScreen = () => {
         }
       },
       (error) => {
-        console.warn('Location fetch error:', error);
-        setLocationName('Location unavailable');
+        console.warn('Location fetch error (high accuracy):', error);
+        // Fallback to low accuracy
+        Geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            setUserLocation({ lat: latitude, lng: longitude });
+
+            try {
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+                {
+                  headers: {
+                    'User-Agent': 'VibeMatch/1.0 (Mobile App)'
+                  }
+                }
+              );
+              const data = await response.json();
+              if (data && data.address) {
+                const name = data.address.city || data.address.town || data.address.village || data.address.suburb || 'Current Location';
+                setLocationName(name);
+              } else {
+                setLocationName('Current Location');
+              }
+            } catch (err) {
+              console.warn('Reverse geocoding error (low accuracy fallback):', err);
+              setLocationName('Current Location');
+            }
+          },
+          (lowError) => {
+            console.warn('Location fetch error (low accuracy fallback):', lowError);
+            setLocationName('Location unavailable');
+          },
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 }
+        );
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
@@ -52,6 +90,18 @@ const MapScreen = () => {
       const granted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
       setHasPermission(granted);
       if (granted) setIsPermanentDenial(false);
+    } else if (Platform.OS === 'ios') {
+      try {
+        const auth = await Geolocation.requestAuthorization('whenInUse');
+        if (auth === 'granted' || auth === 'restricted') {
+          setHasPermission(true);
+        } else {
+          setHasPermission(false);
+        }
+      } catch (err) {
+        console.warn('iOS Permission request error:', err);
+        setHasPermission(false);
+      }
     }
   };
 
@@ -80,6 +130,8 @@ const MapScreen = () => {
       } catch (err) {
         console.warn(err);
       }
+    } else if (Platform.OS === 'ios') {
+      Linking.openSettings();
     }
   };
 

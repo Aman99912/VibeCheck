@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Header, InputBox, AppButton, AppIcon, Colors, ms, vs } from '../../../../Reusable-Component';
+import { Header, InputBox, AppButton, AppIcon, Colors, ms, vs, CText } from '../../../../Reusable-Component';
 import CategorySelector from './CreateRequest-COMPONENT/CategorySelector';
 import CounterInput from './CreateRequest-COMPONENT/CounterInput';
 import VisibilitySelector from './CreateRequest-COMPONENT/VisibilitySelector';
+import MapPickerModal from '../../MAP-COMPONENTS/MapPickerModal';
 
 const CreatePinScreen = () => {
   const navigation = useNavigation();
 
   const [category, setCategory] = useState('sports');
   const [title, setTitle] = useState('');
-  const [location, setLocation] = useState('Central Park, Koramangala');
+  const [locationName, setLocationName] = useState('');
+  const [mapLocation, setMapLocation] = useState(null);
+  const [isMapPickerVisible, setIsMapPickerVisible] = useState(false);
   const [dateTime, setDateTime] = useState('Today, 6:00 PM');
   const [peopleLimit, setPeopleLimit] = useState(8);
   const [duration, setDuration] = useState('2 Hours');
@@ -24,7 +27,7 @@ const CreatePinScreen = () => {
   const handleCreate = () => {
     // Add logic for create pin
     console.log('Create Pin Data:', {
-      category, title, location, dateTime, peopleLimit, duration, description
+      category, title, locationName, mapLocation, dateTime, peopleLimit, duration, description
     });
     navigation.goBack();
   };
@@ -64,13 +67,48 @@ const CreatePinScreen = () => {
 
           <View style={styles.formGroup}>
             <InputBox
-              label="Location"
-              value={location}
-              onChangeText={setLocation}
+              label="Location Name (Venue/Place)"
+              placeholder="e.g. Sector 12 Stadium, Hyatt Hotel..."
+              value={locationName}
+              onChangeText={setLocationName}
               leftIcon="location-on"
-              rightIcon="my-location"
-              onRightIconPress={() => console.log('Fetch location')}
             />
+          </View>
+
+          <View style={styles.formGroup}>
+            <CText variant="body3" weight="semibold" style={styles.selectorLabel}>
+              Map Pin Location
+            </CText>
+            <TouchableOpacity 
+              style={styles.mapSelector} 
+              onPress={() => setIsMapPickerVisible(true)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.mapSelectorLeft}>
+                <View style={styles.mapIconWrapper}>
+                  <AppIcon family="MaterialIcons" name="map" size={ms(20)} color={Colors.primary} />
+                </View>
+                <View style={{ marginLeft: ms(12), flex: 1 }}>
+                  <CText 
+                    variant="body2" 
+                    weight="semibold" 
+                    style={[
+                      styles.mapSelectorValue, 
+                      !mapLocation && { color: Colors.textMuted || '#888' }
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {mapLocation ? mapLocation.name : 'Choose pin from map (Required)'}
+                  </CText>
+                  {mapLocation && (
+                    <CText variant="caption" weight="medium" style={styles.coordinatesText}>
+                      Lat: {mapLocation.latitude.toFixed(4)}, Lng: {mapLocation.longitude.toFixed(4)}
+                    </CText>
+                  )}
+                </View>
+              </View>
+              <AppIcon family="MaterialIcons" name="chevron-right" size={ms(20)} color={Colors.textMuted || '#888'} />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.formGroup}>
@@ -124,9 +162,21 @@ const CreatePinScreen = () => {
         <AppButton 
           title="Create Pin" 
           onPress={handleCreate} 
-          disabled={!title || !location}
+          disabled={!title || !locationName || !mapLocation}
         />
       </View>
+
+      <MapPickerModal
+        visible={isMapPickerVisible}
+        onClose={() => setIsMapPickerVisible(false)}
+        onSelectLocation={(locData) => {
+          setMapLocation(locData);
+          // Auto-fill manual place name if it is currently empty
+          if (!locationName && locData.name) {
+            setLocationName(locData.name);
+          }
+        }}
+      />
     </View>
   );
 };
@@ -145,6 +195,44 @@ const styles = StyleSheet.create({
   formGroup: {
     paddingHorizontal: ms(16),
     marginTop: vs(6),
+  },
+  selectorLabel: {
+    color: Colors.text,
+    marginBottom: vs(8),
+    fontSize: ms(12),
+  },
+  mapSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    borderRadius: ms(12),
+    paddingHorizontal: ms(16),
+    paddingVertical: vs(12),
+    minHeight: vs(54),
+  },
+  mapSelectorLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  mapIconWrapper: {
+    width: ms(36),
+    height: ms(36),
+    borderRadius: ms(18),
+    backgroundColor: Colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapSelectorValue: {
+    color: Colors.text,
+    fontSize: ms(14),
+  },
+  coordinatesText: {
+    color: Colors.textMuted || '#888',
+    marginTop: vs(1),
   },
   bottomContainer: {
     position: 'absolute',

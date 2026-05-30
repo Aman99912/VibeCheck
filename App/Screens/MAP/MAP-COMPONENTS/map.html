@@ -171,6 +171,46 @@
       transform: translate3d(0, 0, 0);
       will-change: transform;
     }
+    /* ── User Location Blue Dot ──────────────────────────── */
+    .user-location-marker {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 24px;
+      height: 24px;
+      position: relative;
+    }
+    
+    .user-location-dot {
+      width: 14px;
+      height: 14px;
+      background-color: #246BFD;
+      border: 2.5px solid #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(36, 107, 253, 0.8);
+      z-index: 2;
+    }
+    
+    .user-location-pulse {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      background-color: rgba(36, 107, 253, 0.4);
+      border-radius: 50%;
+      z-index: 1;
+      animation: pulse 1.8s infinite ease-out;
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(0.6);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -259,7 +299,7 @@
       inertiaMaxSpeed: 1500,
       easeLinearity: 0.1,
       bounceAtZoomLimits: false
-    }).setView([12.9279, 77.6271], 14);
+    }).setView([28.4089, 77.3178], 14);
 
     // ── Blur Fallback Layer (zoom−2 tiles scaled up, always present) ──
     // This is what makes it "never blank" — like Google Maps
@@ -397,6 +437,26 @@
       });
     }
 
+    var userLocationMarker = null;
+
+    window.updateUserLocation = function(lat, lng) {
+      var pos = [lat, lng];
+      if (userLocationMarker) {
+        userLocationMarker.setLatLng(pos);
+      } else {
+        var userIcon = L.divIcon({
+          className: 'leaflet-div-icon',
+          html: '<div class="user-location-marker"><div class="user-location-dot"></div><div class="user-location-pulse"></div></div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        userLocationMarker = L.marker(pos, { 
+          icon: userIcon,
+          zIndexOffset: 1000
+        }).addTo(map);
+      }
+    };
+
     // ── Public APIs (called from React Native) ────────────────────
 
     /**
@@ -440,9 +500,11 @@
       // We only send minimal MAP_MOVED info to avoid bridge lag
       if (window.ReactNativeWebView) {
         var b = map.getBounds();
+        var center = map.getCenter();
         window.ReactNativeWebView.postMessage(JSON.stringify({
           type: 'MAP_MOVED',
-          bounds: { zoom: map.getZoom() }
+          bounds: { zoom: map.getZoom() },
+          center: { lat: center.lat, lng: center.lng }
         }));
       }
     });

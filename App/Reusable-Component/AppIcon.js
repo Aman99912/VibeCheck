@@ -14,11 +14,50 @@
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Feather from 'react-native-vector-icons/Feather';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Entypo from 'react-native-vector-icons/Entypo';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons';
+import Octicons from 'react-native-vector-icons/Octicons';
+import Foundation from 'react-native-vector-icons/Foundation';
+import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import CText from './CText';
 import Colors from './Colors';
 import { ms, vs, normFont } from './Scale';
 
+const getIconComponent = (family) => {
+  switch (family) {
+    case 'Ionicons':
+      return Ionicons;
+    case 'Feather':
+      return Feather;
+    case 'FontAwesome':
+      return FontAwesome;
+    case 'Entypo':
+      return Entypo;
+    case 'MaterialCommunityIcons':
+      return MaterialCommunityIcons;
+    case 'AntDesign':
+      return AntDesign;
+    case 'SimpleLineIcons':
+      return SimpleLineIcons;
+    case 'Octicons':
+      return Octicons;
+    case 'Foundation':
+      return Foundation;
+    case 'EvilIcons':
+      return EvilIcons;
+    case 'MaterialIcons':
+    default:
+      return MaterialIcons;
+  }
+};
+
 const AppIcon = ({
+  family = 'MaterialIcons',
   name = 'star',
   size,
   color = Colors.textPrimary,
@@ -31,10 +70,11 @@ const AppIcon = ({
   accessibilityLabel,
 }) => {
   const iconSize = size ?? ms(24);
+  const IconComponent = getIconComponent(family);
 
   const inner = (
     <View style={[styles.container, containerStyle]}>
-      <MaterialIcons name={name} size={iconSize} color={color} />
+      <IconComponent name={name} size={iconSize} color={color} />
 
       {/* Numeric badge */}
       {badge != null && badge > 0 && (

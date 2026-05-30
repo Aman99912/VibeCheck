@@ -36,12 +36,12 @@ const processDownloadQueue = () => {
     });
 };
 
-// Dummy data for pins (centered in Koramangala / HSR Layout area)
+// Dummy data for pins (centered in Faridabad area)
 const DUMMY_PINS = [
   {
     id: '1',
-    lat: 12.9305,
-    lng: 77.6225,
+    lat: 28.4105,
+    lng: 77.3125,
     title: 'Football Match',
     people: '18 people',
     dist: '0.5 km',
@@ -56,8 +56,8 @@ const DUMMY_PINS = [
   },
   {
     id: '2',
-    lat: 12.9225,
-    lng: 77.6305,
+    lat: 28.4025,
+    lng: 77.3205,
     title: 'Cafe Meetup',
     people: '6 people',
     dist: '0.3 km',
@@ -72,8 +72,8 @@ const DUMMY_PINS = [
   },
   {
     id: '3',
-    lat: 12.929,
-    lng: 77.6325,
+    lat: 28.4150,
+    lng: 77.3255,
     title: 'Live Music',
     people: '24 people',
     dist: '1.1 km',
@@ -88,8 +88,8 @@ const DUMMY_PINS = [
   },
   {
     id: '4',
-    lat: 12.9255,
-    lng: 77.6205,
+    lat: 28.4055,
+    lng: 77.3055,
     title: 'Basketball',
     people: '12 people',
     dist: '0.7 km',
@@ -104,7 +104,7 @@ const DUMMY_PINS = [
   },
 ];
 
-const MapRender = forwardRef(({ userLocation }, ref) => {
+const MapRender = forwardRef(({ userLocation, onMapMoved }, ref) => {
   const webViewRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -119,11 +119,12 @@ const MapRender = forwardRef(({ userLocation }, ref) => {
     }
   }));
 
-  // Auto-recenter when location is first fetched
+  // Auto-recenter + update user location dot when location is fetched
   useEffect(() => {
     if (webViewRef.current && mapReady && userLocation) {
       webViewRef.current.injectJavaScript(
-        `if (window.map) { window.map.flyTo([${userLocation.lat}, ${userLocation.lng}], 14, { duration: 1 }); } true;`
+        `if (window.updateUserLocation) { window.updateUserLocation(${userLocation.lat}, ${userLocation.lng}); }
+         if (window.map) { window.map.flyTo([${userLocation.lat}, ${userLocation.lng}], 14, { duration: 1 }); } true;`
       );
     }
   }, [mapReady, userLocation]);
@@ -210,8 +211,9 @@ const MapRender = forwardRef(({ userLocation }, ref) => {
           break;
 
         case 'MAP_MOVED':
-          // Removed mass cache injection to prevent JS lag/freezes.
-          // Single tiles are injected dynamically via CACHE_TILE now.
+          if (onMapMoved && data.center) {
+            onMapMoved(data.center);
+          }
           break;
 
         default:
