@@ -104,21 +104,29 @@ const DUMMY_PINS = [
   },
 ];
 
-const MapRender = forwardRef((props, ref) => {
+const MapRender = forwardRef(({ userLocation }, ref) => {
   const webViewRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [mapReady, setMapReady] = useState(false);
 
   useImperativeHandle(ref, () => ({
     recenterToUser: () => {
-      if (webViewRef.current && mapReady) {
-        // Fly to default "user location" for now
+      if (webViewRef.current && mapReady && userLocation) {
         webViewRef.current.injectJavaScript(
-          `if (window.map) { window.map.flyTo([12.9279, 77.6271], 14, { duration: 1 }); } true;`
+          `if (window.map) { window.map.flyTo([${userLocation.lat}, ${userLocation.lng}], 14, { duration: 1 }); } true;`
         );
       }
     }
   }));
+
+  // Auto-recenter when location is first fetched
+  useEffect(() => {
+    if (webViewRef.current && mapReady && userLocation) {
+      webViewRef.current.injectJavaScript(
+        `if (window.map) { window.map.flyTo([${userLocation.lat}, ${userLocation.lng}], 14, { duration: 1 }); } true;`
+      );
+    }
+  }, [mapReady, userLocation]);
 
   // ── Initialize SQLite tile DB + start background tile download ──
   useEffect(() => {
@@ -131,12 +139,14 @@ const MapRender = forwardRef((props, ref) => {
         console.log('[MapRender] TileDB initialized');
 
         // 2. Start background tile download for user's area
-        // Uses Bangalore center (12.9279, 77.6271) — replace with user's location
+        // Commented out to prevent Native/JSI OOM crash on older Androids
+        /*
         downloadTilePack(12.9279, 77.6271, pct => {
           if (isMounted) {
             console.log(`[MapRender] Tile download: ${pct}%`);
           }
         });
+        */
       } catch (err) {
         console.warn('[MapRender] Init error:', err);
       }

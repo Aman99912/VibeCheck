@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, PermissionsAndroid, Platform, AppState, Linking } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Geolocation from 'react-native-geolocation-service';
 import MapRender from './MAP-COMPONENTS/MapRender';
 import LocationSelector from './MAP-COMPONENTS/LocationSelector';
 import FilterButton from './MAP-COMPONENTS/FilterButton';
@@ -8,8 +10,41 @@ import MapModalLocation from './MAP-COMPONENTS/MapModalLocation';
 
 const MapScreen = () => {
   const mapRef = useRef(null);
+  const navigation = useNavigation();
   const [hasPermission, setHasPermission] = useState(null);
   const [isPermanentDenial, setIsPermanentDenial] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationName, setLocationName] = useState('Fetching location...');
+
+  const fetchLocation = () => {
+    Geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data && data.address) {
+            const name = data.address.city || data.address.town || data.address.village || data.address.suburb || 'Current Location';
+            setLocationName(name);
+          } else {
+            setLocationName('Current Location');
+          }
+        } catch (error) {
+          console.warn('Reverse geocoding error:', error);
+          setLocationName('Current Location');
+        }
+      },
+      (error) => {
+        console.warn('Location fetch error:', error);
+        setLocationName('Location unavailable');
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
 
   // Check permission silently
   const checkLocationPermission = async () => {
@@ -63,6 +98,12 @@ const MapScreen = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (hasPermission) {
+      fetchLocation();
+    }
+  }, [hasPermission]);
+
   // Show nothing while checking initially
   if (hasPermission === null) {
     return <View style={styles.container} />;
@@ -73,14 +114,17 @@ const MapScreen = () => {
       {hasPermission ? (
         <>
           {/* Background Map layer */}
-          <MapRender ref={mapRef} />
+          <MapRender ref={mapRef} userLocation={userLocation} />
 
           {/* Floating UI Overlays */}
-          <LocationSelector onPress={() => console.log('Location pressed')} />
+          <LocationSelector 
+            locationName={locationName} 
+            onPress={() => fetchLocation()} 
+          />
           <FilterButton onPress={() => console.log('Filter pressed')} />
           
           <CreatePinButton 
-            onCreatePress={() => console.log('Create pin')}
+            onCreatePress={() => navigation.navigate('CreatePin')}
             onRecenterPress={() => mapRef.current?.recenterToUser()}
           />
         </>
