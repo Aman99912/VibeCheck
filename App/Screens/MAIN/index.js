@@ -16,6 +16,12 @@ const MainTabs = ({ onLogout }) => {
       tabBar={(props) => <NavBar {...props} />}
       screenOptions={{
         headerShown: false,
+        tabBarStyle: {
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+        },
       }}
     >
       <Tab.Screen 
