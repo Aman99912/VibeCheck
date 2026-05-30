@@ -21,17 +21,17 @@ const MainTabs = ({ onLogout }) => {
       <Tab.Screen 
         name="Map" 
         component={MapScreen} 
-        options={{ tabBarIcon: 'home' }} 
-      />
-      <Tab.Screen 
-        name="Activity" 
-        component={ActivityScreen} 
-        options={{ tabBarIcon: 'favorite-border' }} 
+        options={{ tabBarIcon: 'location-on' }} 
       />
       <Tab.Screen 
         name="Highlights" 
         component={HighlightsScreen} 
-        options={{ tabBarIcon: 'play-circle-outline' }} 
+        options={{ tabBarIcon: 'smart-display' }} 
+      />
+      <Tab.Screen 
+        name="Activity" 
+        component={ActivityScreen} 
+        options={{ tabBarIcon: 'assignment-turned-in', tabBarLabel: 'My Activity' }} 
       />
       <Tab.Screen 
         name="Profile" 

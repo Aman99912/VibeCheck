@@ -63,8 +63,6 @@ const TabItem = ({ tab, isActive, onPress, badgeCount }) => {
       accessibilityLabel={tab.label}
     >
       <Animated.View style={[styles.iconWrapper, { transform: [{ scale }] }]}>
-        {/* Active pill behind icon */}
-        {isActive && <View style={styles.activePill} />}
         <MaterialIcons name={tab.icon} size={ms(28)} color={color} />
 
         {/* Badge */}
@@ -76,7 +74,6 @@ const TabItem = ({ tab, isActive, onPress, badgeCount }) => {
           </View>
         )}
       </Animated.View>
-
     </TouchableOpacity>
   );
 };
@@ -132,15 +129,33 @@ const NavBar = ({
         style,
       ]}
     >
-      {resolvedTabs.map((tab) => (
-        <TabItem
-          key={tab.key}
-          tab={tab}
-          isActive={resolvedActive === tab.key}
-          onPress={resolvedPress}
-          badgeCount={tab.badge}
-        />
-      ))}
+      {resolvedTabs.map((tab, index) => {
+        // Insert a spacer in the middle for the floating button
+        const isCenter = index === 2;
+        
+        return (
+          <React.Fragment key={tab.key}>
+            {isCenter && <View style={styles.spacer} />}
+            <TabItem
+              tab={tab}
+              isActive={resolvedActive === tab.key}
+              onPress={resolvedPress}
+              badgeCount={tab.badge}
+            />
+          </React.Fragment>
+        );
+      })}
+
+      {/* Floating Center Button */}
+      <View style={styles.floatingButtonContainer} pointerEvents="box-none">
+        <TouchableOpacity 
+          style={styles.centerButton} 
+          activeOpacity={0.9}
+          onPress={() => navigation?.navigate('CreatePin')}
+        >
+          <MaterialIcons name="add" size={ms(32)} color={Colors.white} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -167,19 +182,34 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: ms(54),
-    height: ms(54),
+    width: ms(32),
+    height: ms(32),
   },
-  activePill: {
-    position: 'absolute',
-    width: ms(44),
-    height: ms(44),
-    borderRadius: ms(22),
-    backgroundColor: 'rgba(133, 108, 226, 0.1)', // Brand primary with 10% opacity
-    zIndex: -1,
+  spacer: {
+    width: ms(64), // Space for the floating button
+  },
+  floatingButtonContainer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    paddingBottom: vs(8), // adjust for safe area offset so it sits visually centered
+  },
+  centerButton: {
+    width: ms(52),
+    height: ms(52),
+    borderRadius: ms(26),
+    backgroundColor: '#0057FF', // Bright blue from the reference
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0057FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   tabLabel: {
-    marginTop: vs(3),
+    marginTop: vs(2),
     fontSize: normFont(10),
   },
   badge: {

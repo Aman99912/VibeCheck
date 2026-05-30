@@ -5,7 +5,7 @@ import Geolocation from 'react-native-geolocation-service';
 import MapRender from './MAP-COMPONENTS/MapRender';
 import LocationSelector from './MAP-COMPONENTS/LocationSelector';
 import FilterButton from './MAP-COMPONENTS/FilterButton';
-import CreatePinButton from './MAP-COMPONENTS/CreatePinButton';
+import RecenterButton from './MAP-COMPONENTS/RecenterButton';
 import MapModalLocation from './MAP-COMPONENTS/MapModalLocation';
 
 const MapScreen = () => {
@@ -170,11 +170,7 @@ const MapScreen = () => {
             onPress={() => fetchLocation()} 
           />
           <FilterButton onPress={() => console.log('Filter pressed')} />
-          
-          <CreatePinButton 
-            onCreatePress={() => navigation.navigate('CreatePin')}
-            onRecenterPress={() => mapRef.current?.recenterToUser()}
-          />
+          <RecenterButton onPress={() => mapRef.current?.recenterToUser()} />
         </>
       ) : (
         <MapModalLocation 
