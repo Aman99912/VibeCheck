@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.white,
     paddingHorizontal: ms(12),
-    paddingVertical: vs(8),
+    paddingVertical: vs(14),
     borderRadius: ms(20),
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },

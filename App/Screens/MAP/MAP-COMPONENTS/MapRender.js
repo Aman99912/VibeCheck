@@ -104,7 +104,7 @@ const DUMMY_PINS = [
   },
 ];
 
-const MapRender = forwardRef(({ userLocation, onMapMoved }, ref) => {
+const MapRender = forwardRef(({ userLocation, onMapMoved, onMapDragStart, showPins = true, showCenterPin = false }, ref) => {
   const webViewRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -167,18 +167,35 @@ const MapRender = forwardRef(({ userLocation, onMapMoved }, ref) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // ── When map signals ready, inject cache + pins ─────────────────
+  // ── When map signals ready, inject cache + pins + center pin ────
   useEffect(() => {
     if (mapReady && webViewRef.current) {
       // Inject SQLite tile cache paths into WebView
       injectTileCacheIntoWebView(webViewRef, 14);
 
-      // Inject pin data
-      webViewRef.current.injectJavaScript(
-        `window.updatePins(${JSON.stringify(DUMMY_PINS)}); true;`,
-      );
+      // Only inject activity pins if showPins is true
+      if (showPins) {
+        // Place pins relative to user location so they're always visible
+        const baseLat = userLocation ? userLocation.lat : 28.4089;
+        const baseLng = userLocation ? userLocation.lng : 77.3178;
+        const pinsToInject = DUMMY_PINS.map((pin, i) => ({
+          ...pin,
+          lat: baseLat + pin.lat - 28.4089,
+          lng: baseLng + pin.lng - 77.3178,
+        }));
+        webViewRef.current.injectJavaScript(
+          `window.updatePins(${JSON.stringify(pinsToInject)}); true;`,
+        );
+      }
+
+      // Show center pin overlay inside WebView if requested
+      if (showCenterPin) {
+        webViewRef.current.injectJavaScript(
+          `if (window.showCenterPin) { window.showCenterPin(true); } true;`,
+        );
+      }
     }
-  }, [mapReady]);
+  }, [mapReady, showPins, showCenterPin, userLocation]);
 
   // ── Handle messages from WebView ────────────────────────────────
   const handleMessage = useCallback(event => {
@@ -213,6 +230,12 @@ const MapRender = forwardRef(({ userLocation, onMapMoved }, ref) => {
         case 'MAP_MOVED':
           if (onMapMoved && data.center) {
             onMapMoved(data.center);
+          }
+          break;
+
+        case 'MAP_DRAG_START':
+          if (onMapDragStart) {
+            onMapDragStart();
           }
           break;
 

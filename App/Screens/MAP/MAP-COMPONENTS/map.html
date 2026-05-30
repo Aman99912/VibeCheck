@@ -47,7 +47,7 @@
     .pin-container {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
       width: 165px;
       position: relative;
       transform: translate3d(0, 0, 0);
@@ -211,10 +211,54 @@
         opacity: 0;
       }
     }
+
+    /* ── Center Pin (Rapido-style, hidden by default) ──── */
+    .center-pin {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      z-index: 9999;
+      pointer-events: none;
+      display: none;
+      filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform;
+    }
+    .center-pin.visible { display: block; }
+    .center-pin.lifting {
+      transform: translate(-50%, -100%) translateY(-18px) scale(1.08);
+    }
+    .center-pin i {
+      font-size: 52px;
+      color: #EA4335;
+    }
+    .center-pin-dot {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 5px;
+      background: rgba(0,0,0,0.22);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9998;
+      pointer-events: none;
+      display: none;
+      transition: transform 0.22s ease-out, opacity 0.22s ease-out;
+    }
+    .center-pin-dot.visible { display: block; }
+    .center-pin-dot.lifting {
+      transform: translate(-50%, -50%) scaleX(0.4);
+      opacity: 0.1;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <!-- Rapido-style center pin (toggled from React Native) -->
+  <div id="centerPin" class="center-pin"><i class="material-icons">location_on</i></div>
+  <div id="centerPinDot" class="center-pin-dot"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/supercluster@8.0.1/dist/supercluster.min.js"></script>
   <script>
@@ -290,14 +334,14 @@
       preferCanvas: true,
       updateWhenZooming: true,        // TRUE: Fetch tiles DURING zoom pinch, not after
       updateInterval: 100,
-      maxZoom: 16,
+      maxZoom: 19,
       minZoom: 3,
       attributionControl: false,
       zoomControl: false,
       inertia: true,
-      inertiaDeceleration: 3000,
-      inertiaMaxSpeed: 1500,
-      easeLinearity: 0.1,
+      inertiaDeceleration: 2000,
+      inertiaMaxSpeed: 2500,
+      easeLinearity: 0.08,
       bounceAtZoomLimits: false
     }).setView([28.4089, 77.3178], 14);
 
@@ -311,7 +355,7 @@
       {
         pane: 'blurTiles',
         maxNativeZoom: 12, // CRITICAL: Only fetch up to zoom 12, auto-scale for higher zooms
-        maxZoom: 16,
+        maxZoom: 19,
         subdomains: 'abcd',
         detectRetina: true,
         keepBuffer: 4,     // Preload wide area since zoom 12 tiles are lightweight
@@ -324,7 +368,8 @@
     var mainTileLayer = new CachedTileLayer(
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', 
       {
-        maxZoom: 16,
+        maxZoom: 19,
+        maxNativeZoom: 18,  // CDN tiles go up to 18, Leaflet upscales for 19
         keepBuffer: 3,     // Preload 3 rows offscreen so panning is instant
         subdomains: 'abcd',
         detectRetina: true
@@ -418,8 +463,8 @@
           var icon = L.divIcon({
             className: 'leaflet-div-icon',
             html: buildPinHtml(pin),
-            iconSize: [165, 75],
-            iconAnchor: [82.5, 37.5]
+            iconSize: [165, 85],
+            iconAnchor: [82.5, 85]
           });
 
           var marker = L.marker([lat, lng], { icon: icon });
@@ -491,9 +536,37 @@
 
     // ── Map Events ────────────────────────────────────────────────
 
-    // Re-render markers on map move (throttled)
+    // ── Center Pin API (called from React Native) ─────────────────
+    var _cpPin = document.getElementById('centerPin');
+    var _cpDot = document.getElementById('centerPinDot');
+
+    window.showCenterPin = function(show) {
+      if (show) {
+        _cpPin.classList.add('visible');
+        _cpDot.classList.add('visible');
+      } else {
+        _cpPin.classList.remove('visible');
+        _cpDot.classList.remove('visible');
+      }
+    };
+
+    // Notify React Native + lift pin when map starts moving
+    map.on('movestart', function() {
+      _cpPin.classList.add('lifting');
+      _cpDot.classList.add('lifting');
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MAP_DRAG_START'
+        }));
+      }
+    });
+
+    // Re-render markers + drop pin on map stop
     var renderTimer;
     map.on('moveend zoomend', function() {
+      _cpPin.classList.remove('lifting');
+      _cpDot.classList.remove('lifting');
+
       clearTimeout(renderTimer);
       renderTimer = setTimeout(renderPins, 80);
 

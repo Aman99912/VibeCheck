@@ -16,71 +16,67 @@ const MapScreen = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [locationName, setLocationName] = useState('Fetching location...');
 
+  const reverseGeocodeAndSet = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+        {
+          headers: {
+            'User-Agent': 'VibeMatch/1.0 (Mobile App)'
+          }
+        }
+      );
+      const data = await response.json();
+      if (data && data.address) {
+        const name = data.address.city || data.address.town || data.address.village || data.address.suburb || 'Current Location';
+        setLocationName(name);
+      } else {
+        setLocationName('Current Location');
+      }
+    } catch (error) {
+      console.warn('Reverse geocoding error:', error);
+      setLocationName('Current Location');
+    }
+  };
+
   const fetchLocation = () => {
     setLocationName('Fetching location...');
+
+    // 1️⃣ Fast fetch — low accuracy first (instant, uses network/cached GPS)
     Geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
+        reverseGeocodeAndSet(latitude, longitude);
 
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-            {
-              headers: {
-                'User-Agent': 'VibeMatch/1.0 (Mobile App)'
-              }
-            }
-          );
-          const data = await response.json();
-          if (data && data.address) {
-            const name = data.address.city || data.address.town || data.address.village || data.address.suburb || 'Current Location';
-            setLocationName(name);
-          } else {
-            setLocationName('Current Location');
-          }
-        } catch (error) {
-          console.warn('Reverse geocoding error:', error);
-          setLocationName('Current Location');
-        }
-      },
-      (error) => {
-        console.warn('Location fetch error (high accuracy):', error);
-        // Fallback to low accuracy
+        // 2️⃣ Silent upgrade — high accuracy GPS in background (takes longer)
         Geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords;
-            setUserLocation({ lat: latitude, lng: longitude });
-
-            try {
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-                {
-                  headers: {
-                    'User-Agent': 'VibeMatch/1.0 (Mobile App)'
-                  }
-                }
-              );
-              const data = await response.json();
-              if (data && data.address) {
-                const name = data.address.city || data.address.town || data.address.village || data.address.suburb || 'Current Location';
-                setLocationName(name);
-              } else {
-                setLocationName('Current Location');
-              }
-            } catch (err) {
-              console.warn('Reverse geocoding error (low accuracy fallback):', err);
-              setLocationName('Current Location');
-            }
+          (precisePos) => {
+            const { latitude: pLat, longitude: pLng } = precisePos.coords;
+            setUserLocation({ lat: pLat, lng: pLng });
+            reverseGeocodeAndSet(pLat, pLng);
           },
-          (lowError) => {
-            console.warn('Location fetch error (low accuracy fallback):', lowError);
-            setLocationName('Location unavailable');
-          },
-          { enableHighAccuracy: false, timeout: 15000, maximumAge: 10000 }
+          () => {}, // ignore — we already have low-accuracy result
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      (error) => {
+        console.warn('Location fetch error:', error);
+        // Fallback: try high accuracy directly
+        Geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setUserLocation({ lat: latitude, lng: longitude });
+            reverseGeocodeAndSet(latitude, longitude);
+          },
+          (finalError) => {
+            console.warn('Location fetch final error:', finalError);
+            setLocationName('Location unavailable');
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+        );
+      },
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 30000 }
     );
   };
 
