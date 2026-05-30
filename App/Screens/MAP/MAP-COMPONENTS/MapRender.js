@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect, useCallback} from 'react';
+import React, {useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {WebView} from 'react-native-webview';
 import {
@@ -104,10 +104,21 @@ const DUMMY_PINS = [
   },
 ];
 
-const MapRender = () => {
+const MapRender = forwardRef((props, ref) => {
   const webViewRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    recenterToUser: () => {
+      if (webViewRef.current && mapReady) {
+        // Fly to default "user location" for now
+        webViewRef.current.injectJavaScript(
+          `if (window.map) { window.map.flyTo([12.9279, 77.6271], 14, { duration: 1 }); } true;`
+        );
+      }
+    }
+  }));
 
   // ── Initialize SQLite tile DB + start background tile download ──
   useEffect(() => {
@@ -247,7 +258,7 @@ const MapRender = () => {
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

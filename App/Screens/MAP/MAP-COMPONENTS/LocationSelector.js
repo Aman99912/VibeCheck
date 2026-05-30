@@ -18,7 +18,7 @@ const LocationSelector = ({ locationName = 'Connaught Place', onPress }) => {
         <CText variant="body2" weight="medium" style={styles.text} numberOfLines={1}>
           {locationName}
         </CText>
-        <MaterialIcons name="keyboard-arrow-down" size={ms(18)} color={Colors.text} />
+        <MaterialIcons name="refresh" size={ms(18)} color={Colors.text} />
       </TouchableOpacity>
     </View>
   );

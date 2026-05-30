@@ -135,9 +135,13 @@
     .avatar {
       width: 22px;
       height: 22px;
+      min-width: 22px;
+      min-height: 22px;
       border-radius: 50%;
       border: 1.5px solid #0A1629;
       object-fit: cover;
+      display: block;
+      box-sizing: border-box;
     }
 
     .status-dot {
@@ -246,7 +250,7 @@
       preferCanvas: true,
       updateWhenZooming: true,        // TRUE: Fetch tiles DURING zoom pinch, not after
       updateInterval: 100,
-      maxZoom: 19,
+      maxZoom: 16,
       minZoom: 3,
       attributionControl: false,
       zoomControl: false,
@@ -267,7 +271,7 @@
       {
         pane: 'blurTiles',
         maxNativeZoom: 12, // CRITICAL: Only fetch up to zoom 12, auto-scale for higher zooms
-        maxZoom: 19,
+        maxZoom: 16,
         subdomains: 'abcd',
         detectRetina: true,
         keepBuffer: 4,     // Preload wide area since zoom 12 tiles are lightweight
@@ -280,7 +284,7 @@
     var mainTileLayer = new CachedTileLayer(
       'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', 
       {
-        maxZoom: 19,
+        maxZoom: 16,
         keepBuffer: 3,     // Preload 3 rows offscreen so panning is instant
         subdomains: 'abcd',
         detectRetina: true
@@ -374,8 +378,8 @@
           var icon = L.divIcon({
             className: 'leaflet-div-icon',
             html: buildPinHtml(pin),
-            iconSize: [165, 60],
-            iconAnchor: [82.5, 30]
+            iconSize: [165, 75],
+            iconAnchor: [82.5, 37.5]
           });
 
           var marker = L.marker([lat, lng], { icon: icon });
