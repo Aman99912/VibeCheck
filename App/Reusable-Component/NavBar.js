@@ -130,12 +130,21 @@ const NavBar = ({
       ]}
     >
       {resolvedTabs.map((tab, index) => {
-        // Insert a spacer in the middle for the floating button
         const isCenter = index === 2;
         
         return (
           <React.Fragment key={tab.key}>
-            {isCenter && <View style={styles.spacer} />}
+            {isCenter && (
+              <View style={styles.centerButtonWrapper}>
+                <TouchableOpacity 
+                  style={styles.centerButton} 
+                  activeOpacity={0.9}
+                  onPress={() => navigation?.navigate('CreatePin')}
+                >
+                  <MaterialIcons name="add" size={ms(32)} color={Colors.white} />
+                </TouchableOpacity>
+              </View>
+            )}
             <TabItem
               tab={tab}
               isActive={resolvedActive === tab.key}
@@ -145,17 +154,6 @@ const NavBar = ({
           </React.Fragment>
         );
       })}
-
-      {/* Floating Center Button */}
-      <View style={styles.floatingButtonContainer} pointerEvents="box-none">
-        <TouchableOpacity 
-          style={styles.centerButton} 
-          activeOpacity={0.9}
-          onPress={() => navigation?.navigate('CreatePin')}
-        >
-          <MaterialIcons name="add" size={ms(32)} color={Colors.white} />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
