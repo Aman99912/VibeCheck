@@ -37,7 +37,7 @@ const processDownloadQueue = () => {
 };
 
 // Dummy data for pins (centered in Faridabad area)
-const DUMMY_PINS = [
+export const DUMMY_PINS = [
   {
     id: '1',
     lat: 28.4105,
@@ -53,6 +53,7 @@ const DUMMY_PINS = [
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&fit=crop',
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&fit=crop',
     ],
+    durationMins: 93,
   },
   {
     id: '2',
@@ -69,6 +70,7 @@ const DUMMY_PINS = [
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&fit=crop',
       'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&fit=crop',
     ],
+    durationMins: 55,
   },
   {
     id: '3',
@@ -85,6 +87,7 @@ const DUMMY_PINS = [
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&fit=crop',
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop',
     ],
+    durationMins: 150,
   },
   {
     id: '4',
@@ -101,10 +104,11 @@ const DUMMY_PINS = [
       'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&fit=crop',
       'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=80&fit=crop',
     ],
+    durationMins: 75,
   },
 ];
 
-const MapRender = forwardRef(({ userLocation, onMapMoved, onMapDragStart, showPins = true, showCenterPin = false }, ref) => {
+const MapRender = forwardRef(({ userLocation, onMapMoved, onMapDragStart, onMarkerPress, showPins = true, showCenterPin = false }, ref) => {
   const webViewRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [mapReady, setMapReady] = useState(false);
@@ -210,7 +214,19 @@ const MapRender = forwardRef(({ userLocation, onMapMoved, onMapDragStart, showPi
 
         case 'MARKER_PRESS':
           console.log('[MapRender] Pin pressed:', data.pinId);
-          // TODO: open activity bottom sheet
+          if (onMarkerPress) {
+            const baseLat = userLocation ? userLocation.lat : 28.4089;
+            const baseLng = userLocation ? userLocation.lng : 77.3178;
+            const pinObj = DUMMY_PINS.find(p => p.id === data.pinId);
+            if (pinObj) {
+              const mappedPinObj = {
+                ...pinObj,
+                lat: baseLat + pinObj.lat - 28.4089,
+                lng: baseLng + pinObj.lng - 77.3178,
+              };
+              onMarkerPress(mappedPinObj);
+            }
+          }
           break;
 
         case 'CACHE_TILES':
@@ -261,6 +277,7 @@ const MapRender = forwardRef(({ userLocation, onMapMoved, onMapDragStart, showPi
         source={require('./map.html')}
         style={styles.map}
         onMessage={handleMessage}
+        onConsoleMessage={event => console.log('[WebView Console]', event.nativeEvent.message)}
         // Storage & JS
         domStorageEnabled={true}
         javaScriptEnabled={true}

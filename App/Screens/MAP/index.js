@@ -2,11 +2,14 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, PermissionsAndroid, Platform, AppState, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from 'react-native-geolocation-service';
-import MapRender from './MAP-COMPONENTS/MapRender';
+import MapRender, { DUMMY_PINS } from './MAP-COMPONENTS/MapRender';
 import LocationSelector from './MAP-COMPONENTS/LocationSelector';
 import FilterButton from './MAP-COMPONENTS/FilterButton';
 import RecenterButton from './MAP-COMPONENTS/RecenterButton';
 import MapModalLocation from './MAP-COMPONENTS/MapModalLocation';
+import ViewPin from './MAP-COMPONENTS/ViewPin';
+import AcceptSuccess from './MAP-COMPONENTS/AcceptSuccess';
+import AcceptActivityIsland from './MAP-COMPONENTS/accept-activity-island';
 
 const MapScreen = () => {
   const mapRef = useRef(null);
@@ -15,6 +18,24 @@ const MapScreen = () => {
   const [isPermanentDenial, setIsPermanentDenial] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationName, setLocationName] = useState('Fetching location...');
+  const [selectedPin, setSelectedPin] = useState(null);
+  const [viewPinVisible, setViewPinVisible] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [joinedPinIds, setJoinedPinIds] = useState([]);
+
+  const getMappedPin = (pinId) => {
+    const pinObj = DUMMY_PINS.find(p => p.id === pinId);
+    if (!pinObj) return null;
+    const baseLat = userLocation ? userLocation.lat : 28.4089;
+    const baseLng = userLocation ? userLocation.lng : 77.3178;
+    return {
+      ...pinObj,
+      lat: baseLat + pinObj.lat - 28.4089,
+      lng: baseLng + pinObj.lng - 77.3178,
+    };
+  };
+
+  const joinedPin = joinedPinIds.length > 0 ? getMappedPin(joinedPinIds[0]) : null;
 
   const reverseGeocodeAndSet = async (latitude, longitude) => {
     try {
@@ -162,7 +183,14 @@ const MapScreen = () => {
       {hasPermission ? (
         <>
           {/* Background Map layer */}
-          <MapRender ref={mapRef} userLocation={userLocation} />
+          <MapRender
+            ref={mapRef}
+            userLocation={userLocation}
+            onMarkerPress={(pin) => {
+              setSelectedPin(pin);
+              setViewPinVisible(true);
+            }}
+          />
 
           {/* Floating UI Overlays */}
           <LocationSelector 
@@ -171,6 +199,56 @@ const MapScreen = () => {
           />
           <FilterButton onPress={() => console.log('Filter pressed')} />
           <RecenterButton onPress={() => mapRef.current?.recenterToUser()} />
+
+          {joinedPin && (
+            <AcceptActivityIsland
+              activity={joinedPin}
+              onPress={() => {
+                setSelectedPin(joinedPin);
+                setViewPinVisible(true);
+              }}
+            />
+          )}
+
+          {/* Screen 3: Pin Details View */}
+          <ViewPin
+            visible={viewPinVisible}
+            onClose={() => {
+              setViewPinVisible(false);
+              setSelectedPin(null);
+            }}
+            pin={selectedPin}
+            joinedPinIds={joinedPinIds}
+            onJoinSuccess={() => {
+              if (selectedPin) {
+                setJoinedPinIds((prev) => [...prev, selectedPin.id]);
+              }
+              setViewPinVisible(false);
+              setSuccessVisible(true);
+            }}
+            onLeaveVibe={(pinId, reason) => {
+              console.log(`[MapScreen] User left pin ${pinId} with reason: "${reason}"`);
+              setJoinedPinIds((prev) => prev.filter(id => id !== pinId));
+              setViewPinVisible(false);
+              setSelectedPin(null);
+            }}
+          />
+
+          {/* Screen 6: Accept Success */}
+          <AcceptSuccess
+            visible={successVisible}
+            onClose={() => {
+              setSuccessVisible(false);
+              setSelectedPin(null);
+            }}
+            pin={selectedPin}
+            onOpenChat={() => {
+              setSuccessVisible(false);
+              setSelectedPin(null);
+              // Navigate to the Activity tab screen which contains our current vibes and chats
+              navigation.navigate('Activity');
+            }}
+          />
         </>
       ) : (
         <MapModalLocation 

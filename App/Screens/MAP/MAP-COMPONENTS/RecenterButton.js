@@ -1,12 +1,17 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { Colors, ms, vs } from '../../../Reusable-Component';
 
 const RecenterButton = ({ onPress }) => {
+  const insets = useSafeAreaInsets();
+  // Position it dynamically above the floating absolute bottom tab bar (NavBar height: 88 + bottom margin: max(insets, 12) + gap: 16)
+  const bottomOffset = vs(88) + Math.max(insets.bottom, vs(12)) + vs(16);
+
   return (
     <TouchableOpacity 
-      style={styles.recenterButton} 
+      style={[styles.recenterButton, { bottom: bottomOffset }]} 
       onPress={onPress}
       activeOpacity={0.8}
     >
@@ -18,11 +23,10 @@ const RecenterButton = ({ onPress }) => {
 const styles = StyleSheet.create({
   recenterButton: {
     position: 'absolute',
-    bottom: vs(20),
-    right: ms(16),
+    right: ms(26),
     backgroundColor: Colors.white,
-    width: ms(44),
-    height: ms(44),
+    width: ms(54),
+    height: ms(54),
     borderRadius: ms(22),
     justifyContent: 'center',
     alignItems: 'center',

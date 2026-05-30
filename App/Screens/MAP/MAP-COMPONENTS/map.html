@@ -11,10 +11,16 @@
       height: 100%;
       margin: 0;
       padding: 0;
-      background: #f5f3f0; /* CartoDB Voyager land bg — prevents white flash */
+      background: #e3edf7; /* CartoDB Voyager pastel land/water bg — prevents white flash */
       touch-action: none;
       overscroll-behavior: none;
       -webkit-overflow-scrolling: touch;
+    }
+
+    .leaflet-tile {
+      /* Warm pastel anime-style color mapping filter */
+      filter: saturate(1.45) hue-rotate(-8deg) brightness(1.05) contrast(0.96) sepia(0.04) !important;
+      transition: filter 0.3s ease;
     }
 
     /* ── GPU Acceleration ────────────────────────────────── */
@@ -43,168 +49,254 @@
       border: none !important;
     }
 
-    /* ── Premium Dark Glassmorphism Cards ────────────────── */
-    .pin-container {
+    /* ── Snapchat Style Markers (Anime Inspired) ────────── */
+    .snap-marker-container {
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 165px;
+      width: 160px;
       position: relative;
-      transform: translate3d(0, 0, 0);
-      will-change: transform;
+      /* Smooth organic spring-bounce entrance animation */
+      animation: snapBounce 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      transform-origin: bottom center;
+      will-change: transform, opacity;
     }
 
-    .pin-card {
+    @keyframes snapBounce {
+      0% {
+        transform: scale(0.25) translateY(45px);
+        opacity: 0;
+      }
+      70% {
+        transform: scale(1.08) translateY(-4px);
+        opacity: 0.95;
+      }
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Glowing vibe heat-glow circle underneath the marker */
+    .vibe-halo {
+      position: absolute;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      bottom: -18px;
+      z-index: 1;
+      animation: haloPulse 2.2s infinite ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes haloPulse {
+      0% { transform: scale(0.9); opacity: 0.55; }
+      50% { transform: scale(1.35); opacity: 0.85; }
+      100% { transform: scale(0.9); opacity: 0.55; }
+    }
+
+    /* Glassmorphism Speech Bubble / Status Card */
+    .speech-bubble {
       display: flex;
       flex-direction: row;
       align-items: center;
-      border-radius: 18px;
-      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 6px 10px;
+      box-shadow: 0 8px 24px rgba(26, 12, 60, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.6);
       width: 100%;
       box-sizing: border-box;
       position: relative;
+      z-index: 3;
+      margin-bottom: 8px; /* Gap above character avatars */
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .pin-icon-box {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-right: 10px;
-      flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+    .snap-marker-container:active .speech-bubble {
+      transform: scale(1.04);
+      box-shadow: 0 10px 28px rgba(26, 12, 60, 0.2);
     }
 
-    .pin-icon-box i {
+    /* Triangle pointer for speech bubble */
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid rgba(255, 255, 255, 0.95);
+      z-index: 3;
+    }
+
+    .bubble-emoji {
       font-size: 22px;
-      color: #FFFFFF;
+      margin-right: 8px;
+      flex-shrink: 0;
     }
 
-    .pin-info-box {
+    .bubble-content {
       display: flex;
       flex-direction: column;
-      justify-content: center;
       flex-grow: 1;
       min-width: 0;
     }
 
-    .pin-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #FFFFFF;
-      margin-bottom: 2px;
+    .bubble-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #0A1629;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 14px;
     }
 
-    .pin-people {
-      font-size: 10px;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.8);
+    .bubble-meta {
+      font-size: 8.5px;
+      font-weight: 600;
+      color: #4A5468;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin-bottom: 1px;
+      line-height: 11px;
+      margin-top: 1px;
     }
 
-    .pin-dist {
-      font-size: 9px;
-      font-weight: 400;
-      color: rgba(255, 255, 255, 0.5);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    /* ── Overlapping Avatars ─────────────────────────────── */
-    .avatars-container {
+    /* Avatars representing characters standing on the map */
+    .snap-avatar-stack {
       display: flex;
       flex-direction: row;
-      position: absolute;
-      bottom: -11px;
-      left: 12px;
-      z-index: 10;
-    }
-
-    .avatar-wrapper {
+      align-items: center;
+      justify-content: center;
       position: relative;
-      margin-right: -8px;
+      z-index: 4;
+      height: 40px;
+      filter: drop-shadow(0 4px 8px rgba(26, 12, 60, 0.22));
     }
 
-    .avatar {
-      width: 22px;
-      height: 22px;
-      min-width: 22px;
-      min-height: 22px;
+    .snap-avatar-wrapper {
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      border: 1.5px solid #0A1629;
+      overflow: hidden;
+      border: 2px solid #FFFFFF;
+      background-color: #E4E9F2;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .snap-avatar {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      display: block;
+    }
+
+    .snap-avatar-badge {
+      min-width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      background-color: #856CE2; /* Brand primary */
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 800;
+      font-size: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid #FFFFFF;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      z-index: 12;
+      padding: 0 4px;
       box-sizing: border-box;
     }
 
-    .status-dot {
-      width: 5px;
-      height: 5px;
-      background-color: #10B981;
-      border-radius: 50%;
-      border: 1px solid #0A1629;
-      position: absolute;
-      bottom: 0;
-      right: 0;
-    }
-
-    /* ── Cluster Badges ──────────────────────────────────── */
-    .vibe-cluster {
-      background-color: #246BFD;
-      color: #FFFFFF;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-weight: 700;
-      font-size: 13px;
+    .snap-default-avatar {
+      width: 100%;
+      height: 100%;
+      background-color: #856CE2;
       display: flex;
       justify-content: center;
       align-items: center;
-      border: 2px solid #FFFFFF;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Dynamic ground shadow under characters */
+    .snap-avatar-stack::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 4px;
+      background: rgba(10, 22, 41, 0.25);
+      border-radius: 50%;
+      z-index: -1;
+    }
+
+     /* ── Cluster Badges ──────────────────────────────────── */
+    .vibe-cluster {
+      background: linear-gradient(135deg, #856CE2 0%, #6366F1 100%);
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-weight: 800;
+      font-size: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2.5px solid #FFFFFF;
+      box-shadow: 0 6px 16px rgba(133, 108, 226, 0.35);
       border-radius: 50%;
       transform: translate3d(0, 0, 0);
       will-change: transform;
+      animation: clusterPulse 2.2s infinite ease-in-out;
     }
-    /* ── User Location Blue Dot ──────────────────────────── */
+
+    @keyframes clusterPulse {
+      0% { transform: scale(1); box-shadow: 0 6px 16px rgba(133, 108, 226, 0.3); }
+      50% { transform: scale(1.05); box-shadow: 0 8px 24px rgba(133, 108, 226, 0.55); }
+      100% { transform: scale(1); box-shadow: 0 6px 16px rgba(133, 108, 226, 0.3); }
+    }
+
+    /* ── User Location Glowing Gem ───────────────────────── */
     .user-location-marker {
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       position: relative;
     }
     
     .user-location-dot {
-      width: 14px;
-      height: 14px;
-      background-color: #246BFD;
-      border: 2.5px solid #FFFFFF;
+      width: 16px;
+      height: 16px;
+      background-color: #856CE2; /* Brand color */
+      border: 3px solid #FFFFFF;
       border-radius: 50%;
-      box-shadow: 0 0 10px rgba(36, 107, 253, 0.8);
+      box-shadow: 0 2px 10px rgba(133, 108, 226, 0.6);
       z-index: 2;
     }
     
     .user-location-pulse {
       position: absolute;
-      width: 28px;
-      height: 28px;
-      background-color: rgba(36, 107, 253, 0.4);
+      width: 34px;
+      height: 34px;
+      background-color: rgba(133, 108, 226, 0.3);
       border-radius: 50%;
       z-index: 1;
-      animation: pulse 1.8s infinite ease-out;
+      animation: pulse 2.2s infinite ease-out;
     }
     
     @keyframes pulse {
       0% {
-        transform: scale(0.6);
-        opacity: 0.8;
+        transform: scale(0.5);
+        opacity: 0.85;
       }
       100% {
         transform: scale(2.2);
@@ -259,8 +351,10 @@
   <!-- Rapido-style center pin (toggled from React Native) -->
   <div id="centerPin" class="center-pin"><i class="material-icons">location_on</i></div>
   <div id="centerPinDot" class="center-pin-dot"></div>
+  
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/supercluster@8.0.1/dist/supercluster.min.js"></script>
+  
   <script>
     // ── Tile Cache (injected by React Native) ─────────────────────
     var tileCache = {};
@@ -385,36 +479,103 @@
     });
 
     var activeMarkers = [];
+    var lastPins = [];
+    var currentUserLocation = null;
+
+    // Helper to map Material icon names to gorgeous Emojis for the Snapchat speech bubble
+    function getEmojiForIcon(iconName) {
+      switch (iconName) {
+        case 'sports_soccer': return '⚽';
+        case 'local_cafe': return '☕';
+        case 'music_note': return '🎵';
+        case 'sports_basketball': return '🏀';
+        case 'sports_tennis': return '🎾';
+        case 'restaurant': return '🍔';
+        case 'movie': return '🎬';
+        case 'shopping_bag': return '🛍️';
+        case 'party_mode': return '🎉';
+        case 'location_on':
+        default:
+          return '📍';
+      }
+    }
 
     function buildPinHtml(pin) {
-      // Build avatar HTML
+      var activityEmoji = getEmojiForIcon(pin.icon);
+
+      // Build avatars representing characters standing on the map
       var avatarsHtml = '';
       if (pin.avatars && pin.avatars.length > 0) {
-        avatarsHtml += '<div class="avatars-container">';
-        pin.avatars.forEach(function(url, idx) {
-          avatarsHtml += '<div class="avatar-wrapper">';
-          avatarsHtml += '<img src="' + url + '" class="avatar" />';
-          if (idx === pin.avatars.length - 1) {
-            avatarsHtml += '<div class="status-dot"></div>';
-          }
+        avatarsHtml += '<div class="snap-avatar-stack">';
+        var displayCount = Math.min(pin.avatars.length, 2);
+        for (var i = 0; i < displayCount; i++) {
+          avatarsHtml += '<div class="snap-avatar-wrapper" style="z-index: ' + (10 - i) + '; transform: translateX(' + (i * -12) + 'px);">';
+          avatarsHtml += '<img src="' + pin.avatars[i] + '" class="snap-avatar" />';
           avatarsHtml += '</div>';
-        });
+        }
+        if (pin.avatars.length > 2) {
+          var extraCount = pin.avatars.length - 2;
+          avatarsHtml += '<div class="snap-avatar-badge" style="transform: translateX(' + (displayCount * -12 + 4) + 'px);">' +
+            '+' + extraCount + '</div>';
+        }
+        avatarsHtml += '</div>';
+      } else {
+        avatarsHtml += '<div class="snap-avatar-stack">';
+        avatarsHtml += '<div class="snap-avatar-wrapper">';
+        avatarsHtml += '<div class="snap-default-avatar"><i class="material-icons" style="font-size: 16px; color: white;">person</i></div>';
+        avatarsHtml += '</div>';
         avatarsHtml += '</div>';
       }
 
-      return '<div class="pin-container">' +
-        '<div class="pin-card" style="background: ' + pin.gradient + '; border: 1.5px solid ' + pin.color + '; box-shadow: 0 4px 20px ' + pin.color + '40;">' +
-          '<div class="pin-icon-box">' +
-            '<i class="material-icons">' + pin.icon + '</i>' +
-          '</div>' +
-          '<div class="pin-info-box">' +
-            '<div class="pin-title">' + pin.title + '</div>' +
-            '<div class="pin-people">' + pin.people + '</div>' +
-            '<div class="pin-dist">' + pin.dist + '</div>' +
+      return '<div class="snap-marker-container">' +
+        /* Vibe Halo (Glowing pulse under the avatar) */
+        '<div class="vibe-halo" style="background: radial-gradient(circle, ' + pin.color + '60 0%, transparent 70%);"></div>' +
+        /* Glassmorphic Speech Bubble */
+        '<div class="speech-bubble" style="border-top: 3px solid ' + pin.color + ';">' +
+          '<span class="bubble-emoji">' + activityEmoji + '</span>' +
+          '<div class="bubble-content">' +
+            '<div class="bubble-title">' + pin.title + '</div>' +
+            '<div class="bubble-meta">' + pin.people + ' · ' + pin.dist + '</div>' +
           '</div>' +
         '</div>' +
         avatarsHtml +
       '</div>';
+    }
+
+    function reloadSupercluster() {
+      var features = [];
+
+      // 1. Convert all activity pins to GeoJSON features
+      lastPins.forEach(function(p) {
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [p.lng, p.lat]
+          },
+          properties: Object.assign({}, p, { isUserLocation: false })
+        });
+      });
+
+      // 2. Convert user location to a GeoJSON feature (so it clusters with the activities!)
+      if (currentUserLocation) {
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [currentUserLocation.lng, currentUserLocation.lat]
+          },
+          properties: {
+            isUserLocation: true,
+            id: 'user-loc-pin',
+            color: '#856CE2',
+            title: 'Me'
+          }
+        });
+      }
+
+      cluster.load(features);
+      renderPins();
     }
 
     function renderPins() {
@@ -438,7 +599,7 @@
         var isCluster = point.properties.cluster;
 
         if (isCluster) {
-          // Cluster badge
+          // Cluster badge (contains user count if user location is in the cluster!)
           var count = point.properties.point_count;
           var size = Math.min(30 + count * 2, 52);
           var icon = L.divIcon({
@@ -458,49 +619,44 @@
           marker.addTo(map);
           activeMarkers.push(marker);
         } else {
-          // Activity pin card — premium dark design
-          var pin = point.properties;
-          var icon = L.divIcon({
-            className: 'leaflet-div-icon',
-            html: buildPinHtml(pin),
-            iconSize: [165, 85],
-            iconAnchor: [82.5, 85]
-          });
+          if (point.properties.isUserLocation) {
+            // Render User location dot if not clustered
+            var userIcon = L.divIcon({
+              className: 'leaflet-div-icon',
+              html: '<div class="user-location-marker"><div class="user-location-dot"></div><div class="user-location-pulse"></div></div>',
+              iconSize: [28, 28],
+              iconAnchor: [14, 14]
+            });
+            var marker = L.marker([lat, lng], { 
+              icon: userIcon,
+              zIndexOffset: 1000
+            }).addTo(map);
+            activeMarkers.push(marker);
+          } else {
+            // Snapchat style bubble activity pin
+            var pin = point.properties;
+            var icon = L.divIcon({
+              className: 'leaflet-div-icon',
+              html: buildPinHtml(pin),
+              iconSize: [160, 105],
+              iconAnchor: [80, 105]
+            });
 
-          var marker = L.marker([lat, lng], { icon: icon });
-          marker.on('click', function() {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'MARKER_PRESS',
-                pinId: pin.id
-              }));
-            }
-          });
-          marker.addTo(map);
-          activeMarkers.push(marker);
+            var marker = L.marker([lat, lng], { icon: icon });
+            marker.on('click', function() {
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'MARKER_PRESS',
+                  pinId: pin.id
+                }));
+              }
+            });
+            marker.addTo(map);
+            activeMarkers.push(marker);
+          }
         }
       });
     }
-
-    var userLocationMarker = null;
-
-    window.updateUserLocation = function(lat, lng) {
-      var pos = [lat, lng];
-      if (userLocationMarker) {
-        userLocationMarker.setLatLng(pos);
-      } else {
-        var userIcon = L.divIcon({
-          className: 'leaflet-div-icon',
-          html: '<div class="user-location-marker"><div class="user-location-dot"></div><div class="user-location-pulse"></div></div>',
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
-        });
-        userLocationMarker = L.marker(pos, { 
-          icon: userIcon,
-          zIndexOffset: 1000
-        }).addTo(map);
-      }
-    };
 
     // ── Public APIs (called from React Native) ────────────────────
 
@@ -510,28 +666,22 @@
      */
     window.injectTileCache = function(cacheMap) {
       Object.assign(tileCache, cacheMap);
-      // Removed console.log spam
     };
 
     /**
      * Update pin data and re-render.
-     * Pins format: [{ id, lat, lng, title, people, dist, icon, color, gradient, avatars }]
      */
     window.updatePins = function(pins) {
-      // Convert to GeoJSON features for Supercluster
-      var features = pins.map(function(p) {
-        return {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [p.lng, p.lat]
-          },
-          properties: p
-        };
-      });
+      lastPins = pins;
+      reloadSupercluster();
+    };
 
-      cluster.load(features);
-      renderPins();
+    /**
+     * Update user location and re-render.
+     */
+    window.updateUserLocation = function(lat, lng) {
+      currentUserLocation = { lat: lat, lng: lng };
+      reloadSupercluster();
     };
 
     // ── Map Events ────────────────────────────────────────────────
