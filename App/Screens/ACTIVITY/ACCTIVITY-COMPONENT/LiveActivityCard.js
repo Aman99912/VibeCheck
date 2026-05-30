@@ -3,6 +3,22 @@ import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { CText, AppButton, AppIcon, Colors, ms, vs } from '../../../Reusable-Component';
 import AvatarRow from './AvatarRow';
 
+const getCoverImage = (icon) => {
+  switch (icon) {
+    case 'sports_soccer':
+    case 'sports-soccer':
+      return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&fit=crop';
+    case 'local_cafe':
+      return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&fit=crop';
+    case 'music_note':
+      return 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&fit=crop';
+    case 'sports_basketball':
+      return 'https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=800&fit=crop';
+    default:
+      return 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&fit=crop';
+  }
+};
+
 const LiveActivityCard = ({ activity, onChat, onViewLocation, onMenu }) => {
   return (
     <View style={styles.card}>
@@ -10,7 +26,7 @@ const LiveActivityCard = ({ activity, onChat, onViewLocation, onMenu }) => {
       <View style={styles.topRow}>
         {/* Image Section */}
         <View style={styles.imageContainer}>
-          <View style={styles.imagePlaceholder} />
+          <Image source={{ uri: getCoverImage(activity.icon) }} style={styles.image} resizeMode="cover" />
 
           {/* LIVE badge */}
           <View style={styles.liveBadge}>
@@ -70,23 +86,22 @@ const LiveActivityCard = ({ activity, onChat, onViewLocation, onMenu }) => {
       </View>
 
       {/* Bottom: Buttons */}
-      <View style={styles.buttonContainer}>
+      <View style={styles.buttonRow}>
         <AppButton
           variant="primary"
-          title="Open Activity Chat"
-          leftIcon="chat-bubble"
+          title="Open Chat"
+          leftIcon="chat"
           onPress={onChat}
-          fullWidth
+          style={styles.flexBtn}
           size="sm"
         />
         <AppButton
           variant="outline"
-          title="View Location"
+          title="Location"
           leftIcon="location-on"
           onPress={onViewLocation}
-          fullWidth
+          style={styles.flexBtn}
           size="sm"
-          style={styles.viewLocationBtn}
         />
       </View>
     </View>
@@ -111,12 +126,12 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '42%',
-    minHeight: vs(200),
+    height: vs(140),
     position: 'relative',
   },
-  imagePlaceholder: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.gray300,
+  image: {
+    width: '100%',
+    height: '100%',
   },
   liveBadge: {
     position: 'absolute',
@@ -175,13 +190,15 @@ const styles = StyleSheet.create({
   avatarSection: {
     marginTop: vs(8),
   },
-  buttonContainer: {
+  buttonRow: {
+    flexDirection: 'row',
     paddingHorizontal: ms(12),
     paddingBottom: vs(12),
-    gap: vs(8),
+    gap: ms(8),
   },
-  viewLocationBtn: {
-    marginTop: 0,
+  flexBtn: {
+    flex: 1,
+    borderWidth: 0,
   },
 });
 

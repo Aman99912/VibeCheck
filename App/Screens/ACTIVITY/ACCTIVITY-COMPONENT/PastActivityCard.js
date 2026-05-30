@@ -1,7 +1,25 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { CText, AppButton, AppIcon, Colors, ms, vs } from '../../../Reusable-Component';
 import AvatarRow from './AvatarRow';
+
+const getCoverImage = (icon) => {
+  switch (icon) {
+    case 'sports_soccer':
+      return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&fit=crop';
+    case 'local_cafe':
+      return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&fit=crop';
+    case 'music_note':
+    case 'music-note':
+      return 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&fit=crop';
+    case 'sports_basketball':
+      return 'https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=800&fit=crop';
+    case 'sports-basketball':
+      return 'https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=800&fit=crop';
+    default:
+      return 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&fit=crop';
+  }
+};
 
 const PastActivityCard = ({ activity, onViewHighlights, onAddHighlight, onPress }) => {
   return (
@@ -9,7 +27,7 @@ const PastActivityCard = ({ activity, onViewHighlights, onAddHighlight, onPress 
       <View style={styles.row}>
         {/* Thumbnail */}
         <View style={styles.imageContainer}>
-          <View style={styles.imagePlaceholder} />
+          <Image source={{ uri: getCoverImage(activity.icon) }} style={styles.image} resizeMode="cover" />
           {/* Completed badge */}
           <View style={styles.completedBadge}>
             <CText variant="label" weight="bold" color={Colors.white}>
@@ -106,9 +124,9 @@ const styles = StyleSheet.create({
     height: vs(140),
     position: 'relative',
   },
-  imagePlaceholder: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.gray300,
+  image: {
+    width: '100%',
+    height: '100%',
   },
   completedBadge: {
     position: 'absolute',
