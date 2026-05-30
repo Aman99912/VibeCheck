@@ -99,25 +99,25 @@ const NavBar = ({
   const insets = useSafeAreaInsets();
 
   // ─── Resolve tab list from either mode ─────────────────────────────────────
-  let resolvedTabs   = tabs ?? [];
+  let resolvedTabs = tabs ?? [];
   let resolvedActive = active;
-  let resolvedPress  = onTabPress;
+  let resolvedPress = onTabPress;
 
   if (state && descriptors && navigation) {
     resolvedTabs = state.routes.map((route) => {
       const { options } = descriptors[route.key];
       return {
-        key:   route.key,
+        key: route.key,
         label: options.tabBarLabel ?? options.title ?? route.name,
-        icon:  options.tabBarIcon ?? 'circle',
+        icon: options.tabBarIcon ?? 'circle',
         badge: options.tabBarBadge,
       };
     });
     resolvedActive = state.routes[state.index]?.key;
-    resolvedPress  = (key) => {
-      const route   = state.routes.find((r) => r.key === key);
+    resolvedPress = (key) => {
+      const route = state.routes.find((r) => r.key === key);
       const isFocused = resolvedActive === key;
-      const event   = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+      const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
       if (!isFocused && !event.defaultPrevented) {
         navigation.navigate({ name: route.name, merge: true });
       }
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: Colors.white,
-    paddingTop: vs(20),
+    paddingTop: vs(12),
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     shadowColor: '#2e2e2eff',
@@ -167,15 +167,16 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: ms(50),
-    height: ms(32),
+    width: ms(54),
+    height: ms(54),
   },
   activePill: {
     position: 'absolute',
-    // width: ms(45),
-    // height: ms(37),
-    borderRadius: ms(30),
-    backgroundColor: Colors.primaryGhost,
+    width: ms(44),
+    height: ms(44),
+    borderRadius: ms(22),
+    backgroundColor: 'rgba(133, 108, 226, 0.1)', // Brand primary with 10% opacity
+    zIndex: -1,
   },
   tabLabel: {
     marginTop: vs(3),
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -vs(4),
+    top: -vs(2),
     right: -ms(2),
     minWidth: ms(16),
     height: ms(16),

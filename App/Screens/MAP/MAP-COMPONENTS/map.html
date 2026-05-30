@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    html, body, #map {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #f5f3f0; /* CartoDB Voyager land bg — prevents white flash */
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── GPU Acceleration ────────────────────────────────── */
+    .leaflet-tile,
+    .leaflet-tile-container,
+    .leaflet-marker-icon,
+    .leaflet-marker-shadow,
+    .leaflet-pane,
+    .leaflet-map-pane {
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* ── Blur Fallback Layer (lower zoom, always visible under main) ── */
+    .blur-fallback {
+      filter: blur(2.5px) !important;
+      opacity: 0.65 !important;
+      transform: translate3d(0, 0, 0) scale(1.02) !important;
+    }
+
+    /* ── Clear Leaflet marker defaults ───────────────────── */
+    .leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    /* ── Premium Dark Glassmorphism Cards ────────────────── */
+    .pin-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 165px;
+      position: relative;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+    }
+
+    .pin-card {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      border-radius: 18px;
+      padding: 8px 12px;
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .pin-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 10px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .pin-icon-box i {
+      font-size: 22px;
+      color: #FFFFFF;
+    }
+
+    .pin-info-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-grow: 1;
+      min-width: 0;
+    }
+
+    .pin-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .pin-people {
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin-bottom: 1px;
+    }
+
+    .pin-dist {
+      font-size: 9px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.5);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* ── Overlapping Avatars ─────────────────────────────── */
+    .avatars-container {
+      display: flex;
+      flex-direction: row;
+      position: absolute;
+      bottom: -11px;
+      left: 12px;
+      z-index: 10;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      margin-right: -8px;
+    }
+
+    .avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid #0A1629;
+      object-fit: cover;
+    }
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      background-color: #10B981;
+      border-radius: 50%;
+      border: 1px solid #0A1629;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+
+    /* ── Cluster Badges ──────────────────────────────────── */
+    .vibe-cluster {
+      background-color: #246BFD;
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      border-radius: 50%;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/supercluster@8.0.1/dist/supercluster.min.js"></script>
+  <script>
+    // ── Tile Cache (injected by React Native) ─────────────────────
+    var tileCache = {};
+    
+    // Batch CACHE_TILE requests to prevent React Native bridge lag
+    var pendingCacheTiles = [];
+    var cacheTimer = null;
+    function queueTileForCache(z, x, y) {
+      pendingCacheTiles.push({ z: z, x: x, y: y });
+      if (!cacheTimer) {
+        cacheTimer = setTimeout(function() {
+          if (window.ReactNativeWebView && pendingCacheTiles.length > 0) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'CACHE_TILES',
+              tiles: pendingCacheTiles
+            }));
+            pendingCacheTiles = [];
+          }
+          cacheTimer = null;
+        }, 500); // Send batch every 500ms
+      }
+    }
+
+    // ── Custom TileLayer: local file:// first, CDN fallback ───────
+    var CachedTileLayer = L.TileLayer.extend({
+      createTile: function(coords, done) {
+        var key = coords.z + '-' + coords.x + '-' + coords.y;
+        var localPath = tileCache[key];
+
+        var tile = document.createElement('img');
+        tile.style.transform = 'translate3d(0,0,0)';
+        tile.style.willChange = 'transform';
+        
+        var cdnUrl = L.TileLayer.prototype.getTileUrl.call(this, coords);
+
+        L.DomEvent.on(tile, 'load', L.bind(this._tileOnLoad, this, done, tile));
+        L.DomEvent.on(tile, 'error', function() {
+           // If local file:// fails to load, fallback to CDN
+           if (tile.src !== cdnUrl) {
+             tile.src = cdnUrl;
+           } else {
+             done('error', tile);
+           }
+        });
+
+        if (this.options.crossOrigin) {
+          tile.crossOrigin = '';
+        }
+        tile.alt = '';
+        tile.setAttribute('role', 'presentation');
+
+        if (localPath) {
+          tile.src = localPath;
+        } else {
+          tile.src = cdnUrl;
+          queueTileForCache(coords.z, coords.x, coords.y);
+        }
+        return tile;
+      }
+    });
+
+    // ── Leaflet Map Init ──────────────────────────────────────────
+    var map = L.map('map', {
+      zoomSnap: 0,                    // Fractional zoom — silky smooth
+      zoomDelta: 0.25,                // Smaller steps = smoother
+      zoomAnimationThreshold: 8,
+      keepBuffer: 1,
+      fadeAnimation: true,
+      zoomAnimation: true,
+      markerZoomAnimation: true,
+      preferCanvas: true,
+      updateWhenZooming: true,        // TRUE: Fetch tiles DURING zoom pinch, not after
+      updateInterval: 100,
+      maxZoom: 19,
+      minZoom: 3,
+      attributionControl: false,
+      zoomControl: false,
+      inertia: true,
+      inertiaDeceleration: 3000,
+      inertiaMaxSpeed: 1500,
+      easeLinearity: 0.1,
+      bounceAtZoomLimits: false
+    }).setView([12.9279, 77.6271], 14);
+
+    // ── Blur Fallback Layer (zoom−2 tiles scaled up, always present) ──
+    // This is what makes it "never blank" — like Google Maps
+    map.createPane('blurTiles');
+    map.getPane('blurTiles').style.zIndex = 190;
+
+    var blurLayer = new CachedTileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      {
+        pane: 'blurTiles',
+        maxNativeZoom: 12, // CRITICAL: Only fetch up to zoom 12, auto-scale for higher zooms
+        maxZoom: 19,
+        subdomains: 'abcd',
+        detectRetina: true,
+        keepBuffer: 4,     // Preload wide area since zoom 12 tiles are lightweight
+        className: 'blur-fallback'
+      }
+    );
+    blurLayer.addTo(map);
+
+    // ── Main Tile Layer (SQLite cache → CDN fallback) ─────────────
+    var mainTileLayer = new CachedTileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', 
+      {
+        maxZoom: 19,
+        keepBuffer: 3,     // Preload 3 rows offscreen so panning is instant
+        subdomains: 'abcd',
+        detectRetina: true
+      }
+    );
+    mainTileLayer.addTo(map);
+
+    // ── Supercluster (spatial indexing — replaces markercluster) ───
+    var cluster = new Supercluster({
+      radius: 60,
+      maxZoom: 16,
+      minPoints: 2
+    });
+
+    var activeMarkers = [];
+
+    function buildPinHtml(pin) {
+      // Build avatar HTML
+      var avatarsHtml = '';
+      if (pin.avatars && pin.avatars.length > 0) {
+        avatarsHtml += '<div class="avatars-container">';
+        pin.avatars.forEach(function(url, idx) {
+          avatarsHtml += '<div class="avatar-wrapper">';
+          avatarsHtml += '<img src="' + url + '" class="avatar" />';
+          if (idx === pin.avatars.length - 1) {
+            avatarsHtml += '<div class="status-dot"></div>';
+          }
+          avatarsHtml += '</div>';
+        });
+        avatarsHtml += '</div>';
+      }
+
+      return '<div class="pin-container">' +
+        '<div class="pin-card" style="background: ' + pin.gradient + '; border: 1.5px solid ' + pin.color + '; box-shadow: 0 4px 20px ' + pin.color + '40;">' +
+          '<div class="pin-icon-box">' +
+            '<i class="material-icons">' + pin.icon + '</i>' +
+          '</div>' +
+          '<div class="pin-info-box">' +
+            '<div class="pin-title">' + pin.title + '</div>' +
+            '<div class="pin-people">' + pin.people + '</div>' +
+            '<div class="pin-dist">' + pin.dist + '</div>' +
+          '</div>' +
+        '</div>' +
+        avatarsHtml +
+      '</div>';
+    }
+
+    function renderPins() {
+      // Clear existing markers
+      activeMarkers.forEach(function(m) { map.removeLayer(m); });
+      activeMarkers = [];
+
+      var bounds = map.getBounds();
+      var bbox = [
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth()
+      ];
+      var zoom = Math.floor(map.getZoom());
+      var points = cluster.getClusters(bbox, zoom);
+
+      points.forEach(function(point) {
+        var lng = point.geometry.coordinates[0];
+        var lat = point.geometry.coordinates[1];
+        var isCluster = point.properties.cluster;
+
+        if (isCluster) {
+          // Cluster badge
+          var count = point.properties.point_count;
+          var size = Math.min(30 + count * 2, 52);
+          var icon = L.divIcon({
+            className: 'leaflet-div-icon',
+            html: '<div class="vibe-cluster" style="width:' + size + 'px;height:' + size + 'px;">' +
+              point.properties.point_count_abbreviated + '</div>',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          });
+
+          var marker = L.marker([lat, lng], { icon: icon });
+          marker.on('click', function() {
+            // Zoom into cluster
+            var expansionZoom = cluster.getClusterExpansionZoom(point.id);
+            map.flyTo([lat, lng], Math.min(expansionZoom, 18), { duration: 0.4 });
+          });
+          marker.addTo(map);
+          activeMarkers.push(marker);
+        } else {
+          // Activity pin card — premium dark design
+          var pin = point.properties;
+          var icon = L.divIcon({
+            className: 'leaflet-div-icon',
+            html: buildPinHtml(pin),
+            iconSize: [165, 60],
+            iconAnchor: [82.5, 30]
+          });
+
+          var marker = L.marker([lat, lng], { icon: icon });
+          marker.on('click', function() {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'MARKER_PRESS',
+                pinId: pin.id
+              }));
+            }
+          });
+          marker.addTo(map);
+          activeMarkers.push(marker);
+        }
+      });
+    }
+
+    // ── Public APIs (called from React Native) ────────────────────
+
+    /**
+     * Inject the SQLite tile cache map.
+     * Format: { "z-x-y": "file:///path/to/tile.png" }
+     */
+    window.injectTileCache = function(cacheMap) {
+      Object.assign(tileCache, cacheMap);
+      // Removed console.log spam
+    };
+
+    /**
+     * Update pin data and re-render.
+     * Pins format: [{ id, lat, lng, title, people, dist, icon, color, gradient, avatars }]
+     */
+    window.updatePins = function(pins) {
+      // Convert to GeoJSON features for Supercluster
+      var features = pins.map(function(p) {
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [p.lng, p.lat]
+          },
+          properties: p
+        };
+      });
+
+      cluster.load(features);
+      renderPins();
+    };
+
+    // ── Map Events ────────────────────────────────────────────────
+
+    // Re-render markers on map move (throttled)
+    var renderTimer;
+    map.on('moveend zoomend', function() {
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(renderPins, 80);
+
+      // We only send minimal MAP_MOVED info to avoid bridge lag
+      if (window.ReactNativeWebView) {
+        var b = map.getBounds();
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'MAP_MOVED',
+          bounds: { zoom: map.getZoom() }
+        }));
+      }
+    });
+
+    // Signal to React Native that the map is ready
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_READY' }));
+    }
+  </script>
+</body>
+</html>
