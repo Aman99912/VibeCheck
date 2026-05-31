@@ -21,8 +21,11 @@ const formatTimeRemaining = (mins) => {
   return `${hrs}:${remainingMins < 10 ? '0' : ''}${remainingMins} hour`;
 };
 
-const AcceptActivityIsland = ({ activity, onPress }) => {
+const AcceptActivityIsland = ({ activities = [], onPress }) => {
   const insets = useSafeAreaInsets();
+  
+  const hasMultiple = activities.length > 1;
+  const activity = activities.length > 0 ? activities[0] : null;
   
   // Dimensions of the dynamic island capsule
   const pillWidth = ms(240);
@@ -68,7 +71,7 @@ const AcceptActivityIsland = ({ activity, onPress }) => {
     }
   }, [timeLeft, totalDuration, timerProgress, activity]);
 
-  if (!activity) return null;
+  if (!activities || activities.length === 0) return null;
 
   const title = activity.title || 'Joined Vibe';
   const emoji = activity.emoji || (activity.icon === 'sports_soccer' ? '⚽' : '📍');
@@ -85,41 +88,70 @@ const AcceptActivityIsland = ({ activity, onPress }) => {
         onPress={onPress}
         activeOpacity={0.85}
       >
-        {/* Animated Timer Border Ring (SVG path outline) */}
-        <Svg width={pillWidth} height={pillHeight} style={StyleSheet.absoluteFill}>
-          <AnimatedRect
-            x={2}
-            y={2}
-            width={pillWidth - 4}
-            height={pillHeight - 4}
-            rx={r - 2}
-            ry={r - 2}
-            fill="transparent"
-            stroke={Colors.primary}
-            strokeWidth={4}
-            strokeDasharray={perimeter}
-            strokeDashoffset={strokeDashoffset}
-          />
-        </Svg>
+        {/* Animated Timer Border Ring (SVG path outline) - Only for single vibe */}
+        {!hasMultiple && (
+          <Svg width={pillWidth} height={pillHeight} style={StyleSheet.absoluteFill}>
+            <AnimatedRect
+              x={2}
+              y={2}
+              width={pillWidth - 4}
+              height={pillHeight - 4}
+              rx={r - 2}
+              ry={r - 2}
+              fill="transparent"
+              stroke={Colors.primary}
+              strokeWidth={4}
+              strokeDasharray={perimeter}
+              strokeDashoffset={strokeDashoffset}
+            />
+          </Svg>
+        )}
 
         {/* Content Inside Capsule */}
         <View style={styles.content}>
-          <CText variant="h4" style={styles.emoji}>
-            {emoji}
-          </CText>
-          <View style={styles.textContainer}>
-            <View style={styles.labelRow}>
-              <CText variant="overline" weight="bold" color={Colors.primary} style={styles.label}>
-                ACTIVE VIBE
+          {hasMultiple ? (
+            // ── Stacked View for Multiple Vibes ──
+            <>
+              <View style={styles.multiEmojiWrap}>
+                {activities.slice(0, 3).map((act, idx) => (
+                  <View key={act.id || idx} style={[styles.stackedEmojiBg, { marginLeft: idx === 0 ? 0 : -ms(8), zIndex: 10 - idx }]}>
+                    <CText variant="h4" style={styles.stackedEmojiText}>
+                      {act.emoji || '📍'}
+                    </CText>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.textContainer}>
+                <CText variant="overline" weight="bold" color={Colors.primary} style={styles.label}>
+                  ACTIVE VIBES
+                </CText>
+                <CText variant="bodySmall" weight="bold" color={Colors.white} numberOfLines={1} style={styles.titleText}>
+                  {activities.length} Vibes Live
+                </CText>
+              </View>
+            </>
+          ) : (
+            // ── Single Vibe View ──
+            <>
+              <CText variant="h4" style={styles.emoji}>
+                {emoji}
               </CText>
-              <CText variant="overline" weight="bold" color="rgba(255, 255, 255, 0.6)" style={styles.timeLabel}>
-                • {formatTimeRemaining(timeLeft)}
-              </CText>
-            </View>
-            <CText variant="bodySmall" weight="bold" color={Colors.white} numberOfLines={1} style={styles.titleText}>
-              {title}
-            </CText>
-          </View>
+              <View style={styles.textContainer}>
+                <View style={styles.labelRow}>
+                  <CText variant="overline" weight="bold" color={Colors.primary} style={styles.label}>
+                    ACTIVE VIBE
+                  </CText>
+                  <CText variant="overline" weight="bold" color="rgba(255, 255, 255, 0.6)" style={styles.timeLabel}>
+                    • {formatTimeRemaining(timeLeft)}
+                  </CText>
+                </View>
+                <CText variant="bodySmall" weight="bold" color={Colors.white} numberOfLines={1} style={styles.titleText}>
+                  {title}
+                </CText>
+              </View>
+            </>
+          )}
+
           <MaterialIcons name="chevron-right" size={ms(20)} color={Colors.primary} style={styles.chevron} />
         </View>
       </TouchableOpacity>
@@ -177,10 +209,31 @@ const styles = StyleSheet.create({
     marginLeft: ms(4),
   },
   titleText: {
-    fontSize: ms(12),
+    marginTop: vs(2),
   },
   chevron: {
-    marginLeft: ms(4),
+    marginLeft: ms(8),
+  },
+
+  // Multiple Vibes Specific
+  multiEmojiWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: ms(12),
+  },
+  stackedEmojiBg: {
+    width: ms(26),
+    height: ms(26),
+    borderRadius: ms(13),
+    backgroundColor: '#333333',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#000',
+  },
+  stackedEmojiText: {
+    fontSize: ms(12),
+    lineHeight: ms(16),
   },
 });
 

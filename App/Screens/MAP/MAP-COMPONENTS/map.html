@@ -139,9 +139,21 @@
       color: #000000;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       white-space: nowrap;
-      overflow: hidden;
       text-overflow: ellipsis;
-      letter-spacing: -0.3px;
+      overflow: hidden;
+      max-width: 140px;
+    }
+
+    /* ── Host Bubble Styling (Black + Red + Blackberry) ── */
+    .host-bubble {
+      background: linear-gradient(135deg, #0F0F0F 0%, #5E001F 50%, #2B0033 100%);
+      border: 1px solid #8B0032;
+    }
+    .host-bubble .bubble-title {
+      color: #FFFFFF;
+    }
+    .host-bubble .bubble-pointer {
+      border-top-color: #2B0033; /* Matches bottom of gradient */
     }
 
     /* ── Avatars inside bubble ─────────────────────────────── */
@@ -505,6 +517,7 @@
     function buildPinHtml(pin) {
       var activityEmoji = getEmojiForIcon(pin.icon);
       var accentColor   = pin.color || '#2563EB';
+      var isHostClass   = pin.isHost ? ' host-bubble' : '';
 
       // ── Avatars inside the bubble ───────────────────────────
       var avatarsHtml = '';
@@ -526,7 +539,7 @@
           '<div class="vibe-halo" style="background: radial-gradient(circle, ' + accentColor + '77 0%, transparent 70%);"></div>' +
 
           // ── The Floating Bubble ────────────────────────────────────
-          '<div class="floating-bubble">' +
+          '<div class="floating-bubble' + isHostClass + '">' +
             
             // Left: Emoji + Title
             '<div class="bubble-left">' +

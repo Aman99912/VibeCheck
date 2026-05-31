@@ -1,89 +1,84 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { CText, AppButton, AppIcon, Colors, ms, vs } from '../../../Reusable-Component';
-import AvatarRow from './AvatarRow';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { CText, AppIcon, Colors, ms, vs, normFont } from '../../../Reusable-Component';
 
-const getCoverImage = (icon) => {
+// Helper to get nice icon colors (matches LiveActivityCard)
+const getIconTheme = (icon) => {
   switch (icon) {
     case 'sports_soccer':
-      return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&fit=crop';
+    case 'sports-soccer':
+      return { bg: '#E0F2FE', color: '#0284C7', ionicon: 'football' }; // Blue
     case 'local_cafe':
-      return 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&fit=crop';
+      return { bg: '#FEF3C7', color: '#D97706', ionicon: 'cafe' }; // Orange/Amber
     case 'music_note':
     case 'music-note':
-      return 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&fit=crop';
+      return { bg: '#FCE7F3', color: '#DB2777', ionicon: 'musical-notes' }; // Pink
     case 'sports_basketball':
-      return 'https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=800&fit=crop';
     case 'sports-basketball':
-      return 'https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=800&fit=crop';
+      return { bg: '#FFEDD5', color: '#EA580C', ionicon: 'basketball' }; // Orange
     default:
-      return 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&fit=crop';
+      return { bg: Colors.primary + '15', color: Colors.primary, ionicon: 'calendar' }; // Default
   }
 };
 
 const PastActivityCard = ({ activity, onViewHighlights, onAddHighlight, onPress }) => {
+  const theme = getIconTheme(activity.icon);
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.row}>
-        {/* Thumbnail */}
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: getCoverImage(activity.icon) }} style={styles.image} resizeMode="cover" />
-          {/* Completed badge */}
-          <View style={styles.completedBadge}>
-            <CText variant="label" weight="bold" color={Colors.white}>
-              Completed
-            </CText>
+        
+        {/* ── Left Icon Container ── */}
+        <View style={styles.iconContainer}>
+          <View style={[styles.iconBox, { backgroundColor: theme.bg }]}>
+            <Ionicons name={theme.ionicon} size={ms(24)} color={theme.color} />
           </View>
         </View>
 
-        {/* Info */}
+        {/* ── Info Container ── */}
         <View style={styles.infoContainer}>
-          <View style={styles.topInfo}>
-            {/* Category icon + Title */}
-            <View style={styles.titleRow}>
-              <View style={styles.categoryIcon}>
-                <AppIcon name="music-note" size={ms(14)} color={Colors.white} />
-              </View>
-              <CText variant="body" weight="bold" color={Colors.textPrimary} numberOfLines={1} style={styles.titleText}>
-                {activity.title} {activity.emoji || ''}
-              </CText>
+          <View style={styles.topRow}>
+            <CText style={styles.titleText} numberOfLines={1}>
+              {activity.title} {activity.emoji || ''}
+            </CText>
+            {/* Completed badge */}
+            <View style={styles.completedBadge}>
+              <CText style={styles.completedText}>Done</CText>
             </View>
+          </View>
 
-            {/* Location */}
-            <View style={styles.metaRow}>
-              <AppIcon name="location-on" size={ms(13)} color={Colors.textMuted} />
-              <CText variant="caption" weight="regular" color={Colors.textSecondary} numberOfLines={1} style={styles.metaText}>
-                {activity.location}
-              </CText>
-            </View>
+          {/* Location & Date */}
+          <View style={styles.metaRow}>
+            <AppIcon name="location-on" size={ms(12)} color={Colors.textMuted} />
+            <CText style={styles.metaText} numberOfLines={1}>
+              {activity.location}
+            </CText>
+          </View>
 
-            {/* Date */}
-            <View style={styles.metaRow}>
-              <AppIcon name="calendar-today" size={ms(13)} color={Colors.textMuted} />
-              <CText variant="caption" weight="regular" color={Colors.textSecondary} numberOfLines={1} style={styles.metaText}>
-                {activity.date}
-              </CText>
-            </View>
+          <View style={styles.metaRow}>
+            <AppIcon name="calendar-today" size={ms(12)} color={Colors.textMuted} />
+            <CText style={styles.metaText} numberOfLines={1}>
+              {activity.date}
+            </CText>
+          </View>
 
-            {/* Members */}
-            <View style={styles.metaRow}>
-              <AppIcon name="group" size={ms(13)} color={Colors.textMuted} />
-              <CText variant="caption" weight="regular" color={Colors.textSecondary} style={styles.metaText}>
-                {activity.joined} / {activity.limit} Joined
-              </CText>
-            </View>
+          {/* Members */}
+          <View style={styles.metaRow}>
+            <AppIcon name="group" size={ms(12)} color={Colors.textMuted} />
+            <CText style={styles.metaText}>
+              {activity.joined} / {activity.limit} Joined
+            </CText>
           </View>
 
           {/* Action buttons */}
           <View style={styles.actions}>
-            <AppButton
-              variant="ghost"
-              title="View Highlights"
-              leftIcon="photo-library"
-              onPress={onViewHighlights}
-              size="sm"
-              style={styles.highlightBtn}
-            />
+            <TouchableOpacity style={styles.highlightBtn} onPress={onViewHighlights}>
+              <AppIcon name="photo-library" size={ms(16)} color={Colors.textPrimary} />
+              <CText variant="caption" weight="semibold" color={Colors.textPrimary} style={{ marginLeft: ms(4) }}>
+                View Highlights
+              </CText>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.addHighlight} onPress={onAddHighlight}>
               <AppIcon name="add" size={ms(16)} color={Colors.textPrimary} />
               <CText variant="caption" weight="semibold" color={Colors.textPrimary}>
@@ -95,7 +90,7 @@ const PastActivityCard = ({ activity, onViewHighlights, onAddHighlight, onPress 
 
         {/* Chevron */}
         <View style={styles.chevronContainer}>
-          <AppIcon name="chevron-right" size={ms(22)} color={Colors.textMuted} />
+          <AppIcon name="chevron-right" size={ms(20)} color={'#D1D5DB'} />
         </View>
       </View>
     </TouchableOpacity>
@@ -105,86 +100,104 @@ const PastActivityCard = ({ activity, onViewHighlights, onAddHighlight, onPress 
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: ms(16),
-    backgroundColor: Colors.white,
-    borderRadius: ms(14),
-    overflow: 'hidden',
-    shadowColor: Colors.textPrimary,
+    backgroundColor: '#FFFFFF',
+    borderRadius: ms(16),
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 2,
     marginBottom: vs(12),
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    padding: ms(14),
   },
   row: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  
+  // Icon
+  iconContainer: {
+    marginRight: ms(14),
+  },
+  iconBox: {
+    width: ms(48),
+    height: ms(48),
+    borderRadius: ms(14),
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  imageContainer: {
-    width: ms(110),
-    height: vs(140),
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  completedBadge: {
-    position: 'absolute',
-    top: ms(8),
-    left: ms(8),
-    backgroundColor: Colors.success,
-    paddingHorizontal: ms(8),
-    paddingVertical: vs(2),
-    borderRadius: ms(4),
-  },
+
+  // Info
   infoContainer: {
     flex: 1,
-    paddingHorizontal: ms(10),
-    paddingVertical: vs(10),
-    justifyContent: 'space-between',
   },
-  topInfo: {
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: vs(6),
   },
-  titleRow: {
+  titleText: {
+    flex: 1,
+    fontSize: normFont(15),
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginRight: ms(8),
+  },
+  completedBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: ms(8),
+    paddingVertical: vs(2),
+    borderRadius: ms(6),
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  completedText: {
+    fontSize: normFont(10),
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+  },
+
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: vs(4),
     gap: ms(6),
   },
-  categoryIcon: {
-    width: ms(24),
-    height: ms(24),
-    borderRadius: ms(12),
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  titleText: {
-    flex: 1,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: vs(2),
-    gap: ms(4),
-  },
   metaText: {
     flex: 1,
+    fontSize: normFont(12),
+    color: Colors.textSecondary,
+    fontWeight: '500',
   },
+
   actions: {
-    gap: vs(4),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(12),
+    marginTop: vs(8),
+    paddingTop: vs(8),
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   highlightBtn: {
-    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   addHighlight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: ms(4),
+    marginLeft: 'auto',
   },
   chevronContainer: {
-    paddingRight: ms(8),
+    paddingLeft: ms(8),
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: ms(48),
   },
 });
 

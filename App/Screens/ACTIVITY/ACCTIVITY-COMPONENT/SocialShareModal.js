@@ -54,7 +54,22 @@ const SocialShareModal = ({ visible, onClose, activity }) => {
     const lat = activity.lat || 28.4105;
     const lng = activity.lng || 77.3125;
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-    const textMsg = `Let's meet up for "${activity.title}" ${activity.emoji || ''}!\n📍 Location: ${activity.location}\n🗺️ Google Maps: ${googleMapsUrl}`;
+    const hostProfileUrl = activity.hostProfileUrl || `https://vibecheck.app/host/${activity.hostId || 'unknown'}`;
+
+    // Rich structured share message
+    const textMsg = [
+      `🎉 Join me for — "${activity.title}" ${activity.emoji || ''}`,
+      ``,
+      `👤 Host: ${activity.hostName || 'Unknown Host'}`,
+      `📍 Venue: ${activity.location || 'See map link'}`,
+      `⏰ Time: ${activity.time || 'TBD'}`,
+      `⌛ Duration: ${activity.duration ? activity.duration + ' hrs' : 'TBD'}`,
+      ``,
+      `🗺️ Google Maps: ${googleMapsUrl}`,
+      `👤 Host Profile: ${hostProfileUrl}`,
+      ``,
+      `Tap the map link to navigate and join the vibe! 🚀`,
+    ].join('\n');
 
     try {
       switch (platformId) {
@@ -186,13 +201,42 @@ const SocialShareModal = ({ visible, onClose, activity }) => {
           {/* Pull Handle */}
           <View style={styles.pullHandle} />
 
-          {/* Header */}
-          <View style={styles.header}>
-            <CText variant="h4" weight="bold" color={Colors.textPrimary}>
-              Share Location
-            </CText>
-            <CText variant="caption" weight="medium" color={Colors.textSecondary} style={styles.subtitle}>
-              Share "{activity.title} {activity.emoji || ''}" via Google Maps
+          {/* ── Rich Activity Preview ──────────────────────────────── */}
+          <View style={styles.previewCard}>
+            <View style={styles.previewTop}>
+              <View style={styles.previewEmoji}>
+                <CText style={styles.previewEmojiText}>{activity.emoji || '✨'}</CText>
+              </View>
+              <View style={styles.previewInfo}>
+                <CText variant="h5" weight="bold" color={Colors.textPrimary} numberOfLines={1}>
+                  {activity.title}
+                </CText>
+                <CText variant="caption" weight="medium" color={Colors.textSecondary} numberOfLines={1}>
+                  Hosted by {activity.hostName || 'Unknown Host'}
+                </CText>
+              </View>
+            </View>
+
+            <View style={styles.previewMeta}>
+              <View style={styles.previewMetaItem}>
+                <CText style={styles.previewMetaIcon}>📍</CText>
+                <CText variant="caption" weight="medium" color={Colors.textSecondary} numberOfLines={1} style={styles.previewMetaText}>
+                  {activity.location || 'Venue TBD'}
+                </CText>
+              </View>
+              <View style={styles.previewMetaItem}>
+                <CText style={styles.previewMetaIcon}>⏰</CText>
+                <CText variant="caption" weight="medium" color={Colors.textSecondary} style={styles.previewMetaText}>
+                  {activity.time || 'TBD'}{activity.duration ? `  ·  ${activity.duration} hrs` : ''}
+                </CText>
+              </View>
+            </View>
+          </View>
+
+          {/* ── Share via label ────────────────────────────────────── */}
+          <View style={styles.shareViaRow}>
+            <CText variant="caption" weight="bold" color={Colors.textSecondary} style={styles.shareViaLabel}>
+              SHARE VIA
             </CText>
           </View>
 
@@ -274,12 +318,61 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: vs(16),
   },
-  header: {
+  // ── Rich Preview Card ─────────────────────────────────────────────────────
+  previewCard: {
+    backgroundColor: '#F8FAFF',
+    borderRadius: ms(16),
+    padding: ms(14),
     marginBottom: vs(16),
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
   },
-  subtitle: {
-    marginTop: vs(4),
+  previewTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(12),
+    marginBottom: vs(10),
+  },
+  previewEmoji: {
+    width: ms(48),
+    height: ms(48),
+    borderRadius: ms(14),
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  previewEmojiText: {
+    fontSize: ms(24),
+  },
+  previewInfo: {
+    flex: 1,
+    gap: vs(2),
+  },
+  previewMeta: {
+    gap: vs(6),
+  },
+  previewMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(8),
+  },
+  previewMetaIcon: {
+    fontSize: ms(13),
+  },
+  previewMetaText: {
+    flex: 1,
+  },
+
+  // ── Share Via Label ───────────────────────────────────────────────────────
+  shareViaRow: {
+    marginBottom: vs(10),
+  },
+  shareViaLabel: {
+    fontSize: ms(10),
+    letterSpacing: 1.2,
+    color: '#9CA3AF',
   },
   grid: {
     flexDirection: 'row',

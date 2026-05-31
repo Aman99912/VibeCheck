@@ -42,19 +42,9 @@ const MapHeader = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState('all');
-  const [menuOpen, setMenuOpen] = useState(false);
-
   // ── Entrance animation ────────────────────────────────────────────────────
   const slideY    = useRef(new Animated.Value(-80)).current;
   const fadeAnim  = useRef(new Animated.Value(0)).current;
-
-  // ── Hamburger → X animation ───────────────────────────────────────────────
-  const hamBtnScale  = useRef(new Animated.Value(1)).current;
-  const line1TransY  = useRef(new Animated.Value(0)).current;
-  const line1Rot     = useRef(new Animated.Value(0)).current;
-  const line2Opacity = useRef(new Animated.Value(1)).current;
-  const line3TransY  = useRef(new Animated.Value(0)).current;
-  const line3Rot     = useRef(new Animated.Value(0)).current;
 
   // Chip scale animations (one per chip)
   const chipScales = useRef(FILTER_CHIPS.map(() => new Animated.Value(1))).current;
@@ -77,59 +67,6 @@ const MapHeader = ({
     ]).start();
   }, []);
 
-  // ── Hamburger press handler ────────────────────────────────────────────────
-  const handleHamburgerPress = () => {
-    const opening = !menuOpen;
-    setMenuOpen(opening);
-
-    // Press feedback scale
-    Animated.sequence([
-      Animated.timing(hamBtnScale, { toValue: 0.88, duration: 80, useNativeDriver: true }),
-      Animated.spring(hamBtnScale, {
-        toValue: 1,
-        useNativeDriver: true,
-        damping: 12,
-        stiffness: 220,
-      }),
-    ]).start();
-
-    // The vertical offset to cross the lines (each line is 2px tall, gap is 5px)
-    const lineOffset = ms(7); // 5px gap + 2px line
-
-    Animated.parallel([
-      // Line 1: translate down + rotate 45°
-      Animated.timing(line1TransY, {
-        toValue: opening ? lineOffset : 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(line1Rot, {
-        toValue: opening ? 1 : 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      // Line 2: fade out
-      Animated.timing(line2Opacity, {
-        toValue: opening ? 0 : 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      // Line 3: translate up + rotate -45°
-      Animated.timing(line3TransY, {
-        toValue: opening ? -lineOffset : 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(line3Rot, {
-        toValue: opening ? 1 : 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    onHamburgerPress?.(opening);
-  };
-
   // ── Filter chip press ──────────────────────────────────────────────────────
   const handleFilterPress = (id, idx) => {
     setActiveFilter(id);
@@ -146,10 +83,6 @@ const MapHeader = ({
       }),
     ]).start();
   };
-
-  const line1Rotate = line1Rot.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '45deg'] });
-  const line3Rotate = line3Rot.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-45deg'] });
-
   return (
     <Animated.View
       style={[
@@ -161,98 +94,15 @@ const MapHeader = ({
         },
       ]}
     >
-      {/* ── Row 1: Top Bar ───────────────────────────────────────────────── */}
-      <View style={styles.topRow}>
-
-        {/* Hamburger menu button */}
-        <Animated.View style={{ transform: [{ scale: hamBtnScale }] }}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={handleHamburgerPress}
-            activeOpacity={1}
-            accessibilityLabel="Menu"
-          >
-            <View style={styles.hamburgerLines}>
-              <Animated.View
-                style={[
-                  styles.hamLine,
-                  {
-                    transform: [
-                      { translateY: line1TransY },
-                      { rotate: line1Rotate },
-                    ],
-                  },
-                ]}
-              />
-              <Animated.View
-                style={[
-                  styles.hamLine,
-                  { marginTop: ms(5), opacity: line2Opacity },
-                ]}
-              />
-              <Animated.View
-                style={[
-                  styles.hamLine,
-                  {
-                    marginTop: ms(5),
-                    transform: [
-                      { translateY: line3TransY },
-                      { rotate: line3Rotate },
-                    ],
-                  },
-                ]}
-              />
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Location Pill — center */}
-        <TouchableOpacity
-          style={styles.locationPill}
-          onPress={onLocationPress}
-          activeOpacity={0.97}
-          accessibilityLabel={`Current location: ${locationName}`}
+      {/* ── Single Row Layout: Filter Chips + Notification Bell ────────── */}
+      <View style={styles.headerContent}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipsScroll}
+          contentContainerStyle={styles.chipsContent}
+          decelerationRate="fast"
         >
-          <View style={styles.locationDot} />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {locationName}
-          </Text>
-          <Ionicons name="refresh" size={ms(14)} color="#888888" />
-        </TouchableOpacity>
-
-        {/* Right action buttons */}
-        <View style={styles.rightBtns}>
-          {/* Bell with notification dot */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={onNotificationPress}
-            activeOpacity={0.94}
-            accessibilityLabel="Notifications"
-          >
-            <Ionicons name="notifications-outline" size={ms(18)} color="#333333" />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-
-          {/* Settings */}
-          <TouchableOpacity
-            style={[styles.iconBtn, { marginLeft: ms(8) }]}
-            onPress={onSettingsPress}
-            activeOpacity={0.94}
-            accessibilityLabel="Settings"
-          >
-            <Ionicons name="settings-outline" size={ms(18)} color="#333333" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* ── Row 2: Filter Chips ──────────────────────────────────────────── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipsScroll}
-        contentContainerStyle={styles.chipsContent}
-        decelerationRate="fast"
-      >
         {FILTER_CHIPS.map((chip, idx) => {
           const isActive = activeFilter === chip.id;
           return (
@@ -282,7 +132,19 @@ const MapHeader = ({
             </Animated.View>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+
+        {/* Notification Bell */}
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={onNotificationPress}
+          activeOpacity={0.94}
+          accessibilityLabel="Notifications"
+        >
+          <Ionicons name="notifications-outline" size={ms(18)} color="#333333" />
+          <View style={styles.notifDot} />
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 };
@@ -297,75 +159,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     zIndex: 50,
     paddingHorizontal: ms(16),
-    paddingBottom: vs(12),
+    paddingBottom: vs(20),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.07,
     shadowRadius: 10,
     elevation: 8,
   },
-  topRow: {
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: vs(10),
+    justifyContent: 'space-between',
+    gap: ms(12),
   },
 
-  // ── Icon Button (hamburger, bell, settings) ──────────────────────────────
+  // ── Icon Button (bell) ───────────────────────────────────────────────────
   iconBtn: {
-    width: ms(36),
-    height: ms(36),
-    borderRadius: ms(12),
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center', 
     alignItems: 'center',
     position: 'relative',
-  },
-
-  // ── Hamburger lines ──────────────────────────────────────────────────────
-  hamburgerLines: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hamLine: {
-    width: ms(20),
-    height: ms(2),
-    backgroundColor: '#222222',
-    borderRadius: ms(1),
-  },
-
-  // ── Location pill ────────────────────────────────────────────────────────
-  locationPill: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: ms(6),
-    borderWidth: 1.5,
-    borderColor: '#EEEEEE',
-    borderRadius: ms(20),
-    paddingVertical: vs(6),
-    paddingLeft: ms(8),
-    paddingRight: ms(12),
-    marginHorizontal: ms(10),
-    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  locationDot: {
-    width: ms(8),
-    height: ms(8),
-    borderRadius: ms(4),
-    backgroundColor: '#2563EB',
-    flexShrink: 0,
-  },
-  locationText: {
-    flex: 1,
-    fontSize: normFont(14),
-    fontWeight: '600',
-    color: '#111111',
-    letterSpacing: -0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
 
   // ── Notification dot ─────────────────────────────────────────────────────
@@ -381,28 +202,22 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
 
-  // ── Right buttons group ──────────────────────────────────────────────────
-  rightBtns: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
   // ── Filter Chips ─────────────────────────────────────────────────────────
   chipsScroll: {
-    flexGrow: 0,
+    flex: 1,
   },
   chipsContent: {
-    paddingBottom: vs(4),
     paddingRight: ms(4),
     gap: ms(6),
     flexDirection: 'row',
+    alignItems: 'center',
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: ms(5),
     paddingHorizontal: ms(14),
-    paddingVertical: vs(7),
+    paddingVertical: vs(10),
     borderRadius: ms(20),
     borderWidth: 1.5,
     flexShrink: 0,

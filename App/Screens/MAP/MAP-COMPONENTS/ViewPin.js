@@ -94,7 +94,7 @@ const REACTIONS = [
 ];
 
 // ── ViewPin ───────────────────────────────────────────────────────────────────
-const ViewPin = ({ visible, onClose, pin, onJoinSuccess, joinedPinIds = [], onLeaveVibe }) => {
+const ViewPin = ({ visible, onClose, pin, onJoinSuccess, joinedPins = [], pendingPinIds = [], onLeaveVibe, onCancelRequest }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
@@ -163,8 +163,37 @@ const ViewPin = ({ visible, onClose, pin, onJoinSuccess, joinedPinIds = [], onLe
   }, [onClose, slideAnim, panY]);
 
   // ── Derived pin data ──────────────────────────────────────────────────────
-  const isJoined    = pin ? joinedPinIds.includes(pin.id) : false;
-  const isJoinedAny = joinedPinIds.length > 0;
+  const isJoined = pin ? joinedPins.some(p => p.id === pin.id) : false;
+  const isPending = pin ? pendingPinIds.includes(pin.id) : false;
+
+  const parseTimeMins = (dateStr) => {
+    if (!dateStr) return 0;
+    const match = dateStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return 0;
+    let [_, h, m, ampm] = match;
+    h = parseInt(h, 10);
+    m = parseInt(m, 10);
+    if (ampm.toUpperCase() === 'PM' && h !== 12) h += 12;
+    if (ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+    return h * 60 + m;
+  };
+
+  let timeConflictVibe = null;
+  if (!isJoined && !pin?.isHost && pin) {
+    const newStart = parseTimeMins(pin.dateStr);
+    const newRealEnd = newStart + (pin.durationMins || 60);
+
+    for (const jp of joinedPins) {
+      const jpStart = parseTimeMins(jp.dateStr);
+      const jpRealEnd = jpStart + (jp.durationMins || 60);
+      
+      const isSafe = (newStart >= jpRealEnd + 60) || (jpStart >= newRealEnd + 60);
+      if (!isSafe) {
+        timeConflictVibe = jp;
+        break;
+      }
+    }
+  }
 
   const title        = pin?.title       || 'Special Vibe Meetup';
   const hostedBy     = pin?.hostName    || 'Rohit Sharma';
@@ -184,6 +213,17 @@ const ViewPin = ({ visible, onClose, pin, onJoinSuccess, joinedPinIds = [], onLe
     const m = pin.people.match(/(\d+)/);
     if (m) peopleCount = parseInt(m[0], 10);
   }
+
+  // ── Host Data Mocks ───────────────────────────────────────────────────────
+  const mockRequests = pin?.isHost ? [
+    { id: '1', name: 'Aarav M.', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80' },
+    { id: '2', name: 'Priya K.', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80' }
+  ] : [];
+
+  const mockJoinedMembers = pin?.isHost ? [
+    { id: '3', name: 'Rahul S.', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80' },
+    { id: '4', name: 'Simran J.', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80' }
+  ] : [];
 
   // ── Open / close sheet ────────────────────────────────────────────────────
   useEffect(() => {
@@ -338,11 +378,66 @@ const ViewPin = ({ visible, onClose, pin, onJoinSuccess, joinedPinIds = [], onLe
               </View>
             </View>
 
+            {pin?.isHost && (
+              <>
+                {/* ── Pending Requests ── */}
+                <View style={styles.hostSection}>
+                  <CText style={styles.hostSectionTitle}>Pending Requests</CText>
+                  {mockRequests.map(req => (
+                    <View key={req.id} style={styles.hostRow}>
+                      <Image source={{ uri: req.avatar }} style={styles.hostRowAvatar} />
+                      <CText style={styles.hostRowName}>{req.name}</CText>
+                      <View style={styles.hostRowActions}>
+                        <TouchableOpacity style={[styles.actionBtn, styles.rejectBtn]}>
+                          <Ionicons name="close" size={ms(18)} color="#EF4444" />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.actionBtn, styles.acceptBtn]}>
+                          <Ionicons name="checkmark" size={ms(18)} color="#10B981" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+
+                {/* ── Joined Members ── */}
+                <View style={styles.hostSection}>
+                  <CText style={styles.hostSectionTitle}>Joined Members</CText>
+                  {mockJoinedMembers.map(member => (
+                    <View key={member.id} style={styles.hostRow}>
+                      <Image source={{ uri: member.avatar }} style={styles.hostRowAvatar} />
+                      <CText style={styles.hostRowName}>{member.name}</CText>
+                      <TouchableOpacity style={styles.chatIconBtn}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={ms(20)} color="#2563EB" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
           </ScrollView>
 
           {/* ── Bottom Action Bar ───────────────────────────────────────── */}
           <View style={styles.bottomBar}>
-            {isJoined ? (
+            {pin?.isCompleted ? (
+              // Completed state
+              <View style={styles.disabledWrapper}>
+                <Ionicons name="checkmark-circle" size={ms(18)} color="#10B981" />
+                <Text style={[styles.disabledText, { color: '#10B981', fontWeight: '700' }]}>This Vibe is Completed</Text>
+              </View>
+            ) : pin?.isHost ? (
+              // Host Bottom Bar
+              <View style={styles.joinedActions}>
+                <TouchableOpacity style={styles.chatBtn} onPress={() => {}} activeOpacity={0.85}>
+                  <Ionicons name="chatbubbles-outline" size={ms(18)} color="#2563EB" />
+                  <Text style={styles.chatBtnText}>Open Group Chat</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.leaveBtn} onPress={() => {}} activeOpacity={0.8}>
+                  <Ionicons name="settings-outline" size={ms(18)} color={Colors.textSecondary} />
+                  <Text style={[styles.leaveBtnText, { color: Colors.textSecondary }]}>Manage</Text>
+                </TouchableOpacity>
+              </View>
+            ) : isJoined ? (
               // Already joined: Open Chat + Leave
               <View style={styles.joinedActions}>
                 <TouchableOpacity
@@ -362,11 +457,29 @@ const ViewPin = ({ visible, onClose, pin, onJoinSuccess, joinedPinIds = [], onLe
                   <Text style={styles.leaveBtnText}>Leave</Text>
                 </TouchableOpacity>
               </View>
-            ) : isJoinedAny ? (
-              // Already in a different vibe
-              <View style={styles.disabledWrapper}>
-                <Ionicons name="lock-closed-outline" size={ms(16)} color={Colors.textMuted} />
-                <Text style={styles.disabledText}>You're already in a Vibe</Text>
+            ) : timeConflictVibe ? (
+              // Time conflict
+              <View style={[styles.disabledWrapper, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2', borderWidth: 1 }]}>
+                <Ionicons name="time-outline" size={ms(16)} color="#DC2626" />
+                <Text style={[styles.disabledText, { color: '#DC2626' }]}>
+                  Time conflict with '{timeConflictVibe.title || 'Joined Vibe'}'
+                </Text>
+              </View>
+            ) : isPending ? (
+              // Pending request state
+              <View style={styles.joinedActions}>
+                <View style={[styles.chatBtn, { backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' }]}>
+                  <Ionicons name="time-outline" size={ms(18)} color={Colors.textSecondary} />
+                  <Text style={[styles.chatBtnText, { color: Colors.textSecondary }]}>Wait for Response</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.leaveBtn}
+                  onPress={() => onCancelRequest?.(pin.id)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="close-circle-outline" size={ms(18)} color={Colors.error} />
+                  <Text style={styles.leaveBtnText}>Withdraw</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               // Join button
@@ -703,6 +816,73 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: 0.2,
+  },
+
+  // ── Host Dashboard Styles ──
+  hostSection: {
+    paddingHorizontal: ms(20),
+    marginTop: vs(24),
+  },
+  hostSectionTitle: {
+    fontSize: normFont(14),
+    fontWeight: '800',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: vs(12),
+  },
+  hostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: ms(16),
+    padding: ms(12),
+    marginBottom: vs(8),
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  hostRowAvatar: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    marginRight: ms(12),
+  },
+  hostRowName: {
+    flex: 1,
+    fontSize: normFont(14),
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  hostRowActions: {
+    flexDirection: 'row',
+    gap: ms(8),
+  },
+  actionBtn: {
+    width: ms(32),
+    height: ms(32),
+    borderRadius: ms(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+  },
+  acceptBtn: {
+    borderColor: '#D1FAE5',
+    backgroundColor: '#ECFDF5',
+  },
+  rejectBtn: {
+    borderColor: '#FEE2E2',
+    backgroundColor: '#FEF2F2',
+  },
+  chatIconBtn: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: ms(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
   },
 
   // Joined state actions

@@ -62,6 +62,7 @@ export const DUMMY_PINS = [
     dateStr: 'Today, 5:00 PM',
     description: 'Friendly football match — all skill levels welcome! Bring your boots and some water.',
     tags: ['Sports', 'Outdoor'],
+    isHost: true,
   },
   {
     id: '2',

@@ -18,10 +18,13 @@ const HostProfile = ({ visible, onClose, host, accentColor: propAccent }) => {
 
   if (!host) return null;
 
-  const name    = host.name   || 'Arjun';
-  const avatar  = host.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&fit=crop';
-  const joined  = host.joined || 'Joined 2 years ago';
-  const bio     = host.bio    || 'Hey there! I love organizing casual sports matches, weekend coffee sessions, and late-night acoustic music jams.';
+  const name        = host.name        || 'Arjun';
+  const avatar      = host.avatar      || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&fit=crop';
+  const joined      = host.joined      || 'Joined 2 years ago';
+  const bio         = host.bio         || 'Hey there! I love organizing casual sports matches, weekend coffee sessions, and late-night acoustic music jams.';
+  const rating      = host.rating      || 4.9;
+  const behavior    = host.behavior    || 'Excellent';
+  const reliability = host.reliability || '98%';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
@@ -56,16 +59,30 @@ const HostProfile = ({ visible, onClose, host, accentColor: propAccent }) => {
             </View>
           </View>
 
-          {/* Minimal Stats */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Ionicons name="star" size={ms(14)} color="#F59E0B" />
-              <CText style={styles.statText}>4.9 Rating</CText>
+          {/* Detailed Stats Grid */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statBox}>
+              <View style={styles.statIconWrap}>
+                <Ionicons name="star" size={ms(16)} color="#F59E0B" />
+              </View>
+              <CText style={styles.statValue}>{rating}</CText>
+              <CText style={styles.statLabel}>Avg Rating</CText>
             </View>
-            <View style={styles.statDot} />
-            <View style={styles.statItem}>
-              <Ionicons name="people" size={ms(14)} color={Colors.textSecondary} />
-              <CText style={styles.statText}>42 Vibes</CText>
+
+            <View style={styles.statBox}>
+              <View style={[styles.statIconWrap, { backgroundColor: '#F0FDF4' }]}>
+                <Ionicons name="shield-checkmark" size={ms(16)} color="#16A34A" />
+              </View>
+              <CText style={styles.statValue}>{behavior}</CText>
+              <CText style={styles.statLabel}>Behavior</CText>
+            </View>
+
+            <View style={styles.statBox}>
+              <View style={[styles.statIconWrap, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="time" size={ms(16)} color="#2563EB" />
+              </View>
+              <CText style={styles.statValue}>{reliability}</CText>
+              <CText style={styles.statLabel}>Reliability</CText>
             </View>
           </View>
 
@@ -162,51 +179,54 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Stats
-  statsRow: {
+  // Stats Grid
+  statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingVertical: vs(12),
-    paddingHorizontal: ms(16),
+    marginBottom: vs(24),
+    gap: ms(8),
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
     borderRadius: ms(16),
-    marginBottom: vs(18),
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  statItem: {
-    flexDirection: 'row',
+    padding: ms(12),
     alignItems: 'center',
-    gap: ms(4),
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
-  statText: {
-    fontSize: normFont(12),
-    fontWeight: '600',
+  statIconWrap: {
+    width: ms(32),
+    height: ms(32),
+    borderRadius: ms(16),
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: vs(6),
+  },
+  statValue: {
+    fontSize: normFont(14),
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: vs(2),
+  },
+  statLabel: {
+    fontSize: normFont(11),
     color: Colors.textSecondary,
-  },
-  statDot: {
-    width: ms(4),
-    height: ms(4),
-    borderRadius: ms(2),
-    backgroundColor: Colors.border,
-    marginHorizontal: ms(10),
+    fontWeight: '600',
   },
 
   // Headings
   sectionTitle: {
-    fontSize: normFont(12),
+    fontSize: normFont(16),
     fontWeight: '800',
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: vs(6),
+    color: Colors.textPrimary,
+    marginBottom: vs(8),
   },
 
   // Bio
   bioText: {
     fontSize: normFont(14),
-    color: Colors.textSecondary,
     lineHeight: normFont(21),
     marginBottom: vs(10), // Reduced since there's no tags below it
   },

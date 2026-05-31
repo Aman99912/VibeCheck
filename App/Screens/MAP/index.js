@@ -34,6 +34,7 @@ const MapScreen = () => {
   const [selectedPin,      setSelectedPin]      = useState(null);
   const [viewPinVisible,   setViewPinVisible]   = useState(false);
   const [joinedPinIds,     setJoinedPinIds]     = useState([]);
+  const [pendingPinIds,    setPendingPinIds]    = useState([]);
   const [activeFilter,     setActiveFilter]     = useState('all');
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ const MapScreen = () => {
     };
   };
 
-  const joinedPin = joinedPinIds.length > 0 ? getMappedPin(joinedPinIds[0]) : null;
+  const joinedPins = joinedPinIds.map(getMappedPin).filter(Boolean);
 
   // ── Reverse geocoding ─────────────────────────────────────────────────────
   const reverseGeocodeAndSet = async (latitude, longitude) => {
@@ -210,12 +211,16 @@ const MapScreen = () => {
           <RecenterButton onPress={() => mapRef.current?.recenterToUser()} />
 
           {/* ── Active Vibe Island (when user has joined a vibe) ──────── */}
-          {joinedPin && (!viewPinVisible || (selectedPin && selectedPin.id !== joinedPin.id)) && (
+          {joinedPins.length > 0 && (!viewPinVisible || (selectedPin && !joinedPinIds.includes(selectedPin.id))) && (
             <AcceptActivityIsland
-              activity={joinedPin}
+              activities={joinedPins}
               onPress={() => {
-                setSelectedPin(joinedPin);
-                setViewPinVisible(true);
+                if (joinedPins.length > 1) {
+                  navigation.navigate('Activity');
+                } else {
+                  setSelectedPin(joinedPins[0]);
+                  setViewPinVisible(true);
+                }
               }}
             />
           )}
@@ -228,11 +233,15 @@ const MapScreen = () => {
               setSelectedPin(null);
             }}
             pin={selectedPin}
-            joinedPinIds={joinedPinIds}
+            joinedPins={joinedPins}
+            pendingPinIds={pendingPinIds}
             onJoinSuccess={() => {
               if (selectedPin) {
-                setJoinedPinIds((prev) => [...prev, selectedPin.id]);
+                setPendingPinIds((prev) => [...prev, selectedPin.id]);
               }
+            }}
+            onCancelRequest={(pinId) => {
+              setPendingPinIds((prev) => prev.filter(id => id !== pinId));
             }}
             onLeaveVibe={(pinId, reason) => {
               console.log(`[MapScreen] Left pin ${pinId}: "${reason}"`);

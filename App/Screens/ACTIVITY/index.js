@@ -6,18 +6,39 @@ import LiveActivityCard from './ACCTIVITY-COMPONENT/LiveActivityCard';
 import PastActivityCard from './ACCTIVITY-COMPONENT/PastActivityCard';
 import ActivityMapModal from './ACCTIVITY-COMPONENT/ActivityMapModal';
 import SocialShareModal from './ACCTIVITY-COMPONENT/SocialShareModal';
+import RequestsModal from './ACCTIVITY-COMPONENT/RequestsModal';
+import HostProfile from '../MAP/MAP-COMPONENTS/hostProfile';
 
-const MOCK_CURRENT = {
-  title: 'Evening Football Match',
-  emoji: '⚽',
-  location: 'Central Park, Koramangala',
-  time: 'Started 45 mins ago',
-  joined: 6,
-  limit: 8,
-  icon: 'sports_soccer',
-  lat: 28.4105,
-  lng: 77.3125,
-};
+const MOCK_ACTIVE_VIBES = [
+  {
+    id: 'active_1',
+    title: 'Evening Football Match',
+    emoji: '⚽',
+    location: 'Central Park, Koramangala',
+    time: 'Started 45 mins ago',
+    joined: 6,
+    limit: 8,
+    icon: 'sports_soccer',
+    lat: 28.4105,
+    lng: 77.3125,
+    isHost: true,
+    requests: 3,
+  },
+  {
+    id: 'active_2',
+    title: 'Late Night Coffee',
+    emoji: '☕',
+    location: 'Brew & Chill Cafe, Faridabad',
+    time: 'Starts in 1 hour',
+    joined: 4,
+    limit: 6,
+    icon: 'local_cafe',
+    lat: 28.4025,
+    lng: 77.3205,
+    isHost: false,
+    requests: 0,
+  }
+];
 
 
 const MOCK_PAST = [
@@ -74,6 +95,8 @@ const MOCK_PAST = [
 const ActivityScreen = () => {
   const [selectedActivityForMap, setSelectedActivityForMap] = useState(null);
   const [shareActivity, setShareActivity] = useState(null);
+  const [showRequests, setShowRequests] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   return (
     <View style={styles.container}>
@@ -90,19 +113,22 @@ const ActivityScreen = () => {
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
       >
-        {/* Current Live Vibe */}
+        {/* Current / Upcoming Vibes Section */}
         <SectionHeader
-          title="Current"
-          showDot
-          subtitle="Live Now"
-          subtitleColor={Colors.success}
+          title="Current & Upcoming Vibes"
+          actionLabel="View on Map"
+          onAction={() => console.log('Go to map')}
         />
-        <LiveActivityCard
-          activity={MOCK_CURRENT}
-          onChat={() => console.log('Open chat')}
-          onViewLocation={() => setSelectedActivityForMap(MOCK_CURRENT)}
-          onMenu={() => setShareActivity(MOCK_CURRENT)}
-        />
+        {MOCK_ACTIVE_VIBES.map((vibe) => (
+          <LiveActivityCard
+            key={vibe.id}
+            activity={vibe}
+            onChat={() => console.log('Open chat for', vibe.title)}
+            onViewLocation={() => setSelectedActivityForMap(vibe)}
+            onMenu={() => setShareActivity(vibe)}
+            onViewRequests={() => setShowRequests(true)}
+          />
+        ))}
 
         {/* Past Vibes Section */}
         <SectionHeader
@@ -115,12 +141,12 @@ const ActivityScreen = () => {
             activity={activity}
             onViewHighlights={() => console.log('View highlights:', activity.title)}
             onAddHighlight={() => console.log('Add highlight:', activity.title)}
-            onPress={() => setSelectedActivityForMap(activity)}
+            onPress={() => setSelectedActivityForMap({ ...activity, isCompleted: true })}
           />
         ))}
       </ScrollView>
 
-      {/* Map modal displaying bike routing and distance */}
+      {/* Activity Map Modal — opens on Location button press */}
       <ActivityMapModal
         visible={!!selectedActivityForMap}
         onClose={() => setSelectedActivityForMap(null)}
@@ -132,6 +158,21 @@ const ActivityScreen = () => {
         visible={!!shareActivity}
         onClose={() => setShareActivity(null)}
         activity={shareActivity}
+      />
+
+      {/* Host Mode Requests Modal */}
+      <RequestsModal
+        visible={showRequests}
+        onClose={() => setShowRequests(false)}
+        onViewProfile={(user) => setSelectedUser(user)}
+      />
+
+      {/* Profile Modal for incoming requests */}
+      <HostProfile
+        visible={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+        host={selectedUser}
+        accentColor="#10B981"
       />
     </View>
   );
