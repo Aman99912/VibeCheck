@@ -1,4 +1,4 @@
-package com.vibematch
+package com.vibematch.tomo
 
 import android.app.Application
 import com.facebook.react.PackageList

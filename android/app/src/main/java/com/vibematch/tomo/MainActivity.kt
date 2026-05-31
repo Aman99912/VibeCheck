@@ -1,4 +1,4 @@
-package com.vibematch
+package com.vibematch.tomo
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
