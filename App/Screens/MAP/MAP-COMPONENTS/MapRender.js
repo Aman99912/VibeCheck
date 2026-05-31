@@ -1,6 +1,7 @@
 import React, {useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle} from 'react';
 import {View, StyleSheet} from 'react-native';
 import {WebView} from 'react-native-webview';
+import {mapHtml} from './mapHtml';
 import {
   initTileDB,
   downloadTilePack,
@@ -344,7 +345,7 @@ const MapRender = forwardRef(({ userLocation, isModalOpen, onMapMoved, onMapDrag
       <WebView
         ref={webViewRef}
         originWhitelist={['*']}
-        source={require('./map.html')}
+        source={{ html: mapHtml, baseUrl: 'file:///android_asset/' }}
         style={styles.map}
         onMessage={handleMessage}
         onConsoleMessage={event => console.log('[WebView Console]', event.nativeEvent.message)}
