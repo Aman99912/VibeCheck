@@ -46,7 +46,7 @@ const MAP_HTML = `
       background: #3B82F6;
       border: 2px solid #FFFFFF;
       box-shadow: 0 0 6px rgba(59, 130, 246, 0.8);
-      z-index: 2;
+      z-index: 3;
     }
     .pulse-ring {
       position: absolute;
@@ -55,7 +55,18 @@ const MAP_HTML = `
       border-radius: 50%;
       background-color: rgba(59, 130, 246, 0.4);
       animation: pulse 1.8s infinite ease-out;
+      z-index: 2;
+    }
+    .heading-wedge {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      transform-origin: center center;
+      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       z-index: 1;
+      pointer-events: none;
+      top: -28px;
+      left: -28px;
     }
     @keyframes pulse {
       0% { transform: scale(0.6); opacity: 1; }
@@ -82,6 +93,84 @@ const MAP_HTML = `
     var destMarker = null;
     var routeLineBg = null;
     var routeLine = null;
+    var currentHeading = 0;
+    var targetHeading = 0;
+    var headingAnimFrame = null;
+
+    function lerpAngle(from, to, t) {
+      var diff = ((to - from + 540) % 360) - 180;
+      return from + diff * t;
+    }
+
+    function animateHeading() {
+      var diff = ((targetHeading - currentHeading + 540) % 360) - 180;
+      if (Math.abs(diff) > 0.3) {
+        currentHeading = lerpAngle(currentHeading, targetHeading, 0.12);
+        var wedge = document.getElementById('userHeadingWedge');
+        if (wedge) wedge.style.transform = 'rotate(' + currentHeading + 'deg)';
+        headingAnimFrame = requestAnimationFrame(animateHeading);
+      } else {
+        currentHeading = targetHeading;
+        var wedge = document.getElementById('userHeadingWedge');
+        if (wedge) wedge.style.transform = 'rotate(' + currentHeading + 'deg)';
+        headingAnimFrame = null;
+      }
+    }
+
+    function setHeading(heading) {
+      if (heading === null || heading === undefined || isNaN(heading)) return;
+      targetHeading = heading;
+      if (!headingAnimFrame) {
+        headingAnimFrame = requestAnimationFrame(animateHeading);
+      }
+    }
+
+    window.updateUserHeading = function(heading) {
+      setHeading(heading);
+    };
+
+    window.updateUserPosition = function(userLat, userLng, heading) {
+      try {
+        if (userMarker) {
+          // Just update position & heading — no icon rebuild needed
+          userMarker.setLatLng([userLat, userLng]);
+        } else {
+          var userHtml = buildUserIcon(currentHeading);
+          var userIcon = L.divIcon({
+            html: userHtml,
+            className: 'custom-user-icon',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+          userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
+        }
+
+        if (heading !== undefined && heading !== null && heading >= 0) {
+          setHeading(heading);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    function buildUserIcon(h) {
+      return '<div class="user-pulse-container">' +
+             '  <div class="pulse-ring"></div>' +
+             '  <div class="heading-wedge" id="userHeadingWedge" style="transform: rotate(' + (h || 0) + 'deg);">' +
+             '    <svg width="80" height="80" viewBox="0 0 80 80">' +
+             '      <defs>' +
+             '        <radialGradient id="coneGrad" cx="50%" cy="100%" r="75%">' +
+             '          <stop offset="0%" stop-color="rgba(59, 130, 246, 0.7)" />' +
+             '          <stop offset="60%" stop-color="rgba(59, 130, 246, 0.2)" />' +
+             '          <stop offset="100%" stop-color="rgba(59, 130, 246, 0)" />' +
+             '        </radialGradient>' +
+             '      </defs>' +
+             '      <path d="M40 40 L26 5 A 38 38 0 0 1 54 5 Z" fill="url(#coneGrad)" />' +
+             '    </svg>' +
+             '  </div>' +
+             '  <div class="user-dot"></div>' +
+             '</div>';
+    }
 
     window.updateRoute = function(userLat, userLng, destLat, destLng, routeCoordsJson) {
       try {
@@ -90,9 +179,10 @@ const MAP_HTML = `
         if (routeLineBg) map.removeLayer(routeLineBg);
         if (routeLine) map.removeLayer(routeLine);
 
-        // Pulsing Blue Dot User Icon
+        var userHtml = buildUserIcon(currentHeading);
+
         var userIcon = L.divIcon({
-          html: '<div class="user-pulse-container"><div class="pulse-ring"></div><div class="user-dot"></div></div>',
+          html: userHtml,
           className: 'custom-user-icon',
           iconSize: [24, 24],
           iconAnchor: [12, 12]
@@ -164,6 +254,28 @@ const MAP_HTML = `
         console.error(e);
       }
     };
+
+    // Note: device orientation events are injected from React Native layer
+    // via injectJavaScript -> updateUserHeading() for reliable cross-platform support.
+    // The listeners below are kept as secondary fallback for environments where they work.
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+ requires explicit permission
+      DeviceOrientationEvent.requestPermission().then(function(state) {
+        if (state === 'granted') {
+          window.addEventListener('deviceorientation', function(e) {
+            if (e.webkitCompassHeading) setHeading(e.webkitCompassHeading);
+            else if (e.alpha !== null) setHeading(360 - e.alpha);
+          }, true);
+        }
+      }).catch(function() {});
+    } else {
+      window.addEventListener('deviceorientationabsolute', function(e) {
+        if (e.alpha !== null && e.alpha !== undefined) setHeading(360 - e.alpha);
+      }, true);
+      window.addEventListener('deviceorientation', function(e) {
+        if (e.webkitCompassHeading) setHeading(e.webkitCompassHeading);
+      }, true);
+    }
   </script>
 </body>
 </html>
@@ -178,15 +290,25 @@ const ActivityMapModal = ({ visible, onClose, activity }) => {
   const [shareModalVisible, setShareModalVisible] = useState(false);
 
   useEffect(() => {
+    let watchId = null;
     if (visible && activity) {
       setLoading(true);
       
-      // Get user location
+      // Get initial location
       Geolocation.getCurrentPosition(
         (position) => {
           const uCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
           setUserLocation(uCoords);
           fetchRoute(uCoords, activity);
+          
+          // Pass initial heading if available
+          if (position.coords.heading !== null && position.coords.heading !== undefined && position.coords.heading >= 0) {
+            if (webViewRef.current) {
+              webViewRef.current.injectJavaScript(
+                `if(window.updateUserHeading) { window.updateUserHeading(${position.coords.heading}); } true;`
+              );
+            }
+          }
         },
         (error) => {
           console.warn('[ActivityMapModal] Geolocation error:', error);
@@ -195,7 +317,51 @@ const ActivityMapModal = ({ visible, onClose, activity }) => {
         },
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
       );
+
+      // Watch user's live position + compass heading
+      // enableHighAccuracy: true activates GPS+magnetometer fusion → delivers compass heading even when stationary
+      // distanceFilter: 0 ensures every heading update (even without movement) triggers the callback
+      watchId = Geolocation.watchPosition(
+        (position) => {
+          const uCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
+          setUserLocation(uCoords);
+          
+          const rawHeading = position.coords.heading;
+          const headingVal = (rawHeading !== null && rawHeading !== undefined && rawHeading >= 0 && !isNaN(rawHeading))
+            ? rawHeading
+            : null;
+            
+          if (webViewRef.current) {
+            if (headingVal !== null) {
+              // Update heading smoothly without rebuilding the whole icon
+              webViewRef.current.injectJavaScript(
+                `if(window.updateUserHeading) { window.updateUserHeading(${headingVal}); } true;`
+              );
+            }
+            // Also update position on map
+            webViewRef.current.injectJavaScript(
+              `if(window.updateUserPosition) { window.updateUserPosition(${position.coords.latitude}, ${position.coords.longitude}, ${headingVal !== null ? headingVal : 'null'}); } true;`
+            );
+          }
+        },
+        (error) => {
+          console.warn('[ActivityMapModal] Geolocation watch error:', error);
+        },
+        { 
+          enableHighAccuracy: true,  // KEY: activates compass/magnetometer fusion
+          distanceFilter: 0,          // KEY: fire on heading change even without movement
+          interval: 500,              // Update every 500ms
+          fastestInterval: 250,       // Fastest interval
+          forceRequestLocation: true, // Android: force fresh reading
+        }
+      );
     }
+
+    return () => {
+      if (watchId !== null) {
+        Geolocation.clearWatch(watchId);
+      }
+    };
   }, [visible, activity]);
 
   const fetchRoute = async (userLoc, act) => {

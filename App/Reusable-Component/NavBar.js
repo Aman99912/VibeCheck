@@ -1,226 +1,203 @@
 /**
- * NavBar.js  ─  Premium Curved Bottom Tab Navigation Bar
+ * NavBar.js  ─  Professional Bottom Tab Navigation Bar
  *
- * A modern, floating bottom navigation bar with a smooth liquid (milk-fold) 
- * cutout in the center and a raised floating action button (FAB).
- *
- * Features:
- *  • Custom SVG curved shape with soft Bezier transitions
- *  • Premium active tab glow background + scale and shift animations
- *  • High-quality Feather/Ionicons automatic mapping via AppIcon
- *  • Safe-area awareness with floating pill layout
- *  • Android-friendly touch targeting for raised elements
+ * Clean, modern floating bottom nav with:
+ *  • Crisp Ionicons for each tab — no icon mapping issues
+ *  • Animated pill active indicator that slides smoothly
+ *  • Icon + label layout (icon shifts up on active, label fades in)
+ *  • Solid FAB with brand gradient glow
+ *  • Safe-area aware, stable layout, no SVG cutout complexity
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   TouchableOpacity,
   Animated,
   StyleSheet,
-  Dimensions,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 import CText from './CText';
 import Colors from './Colors';
 import AppIcon from './AppIcon';
 import { ms, vs, normFont } from './Scale';
 
-// ─── Icon Mapping for Premium Look ───────────────────────────────────────────
-const mapIcon = (iconName) => {
-  switch (iconName) {
-    case 'location-on':
-      return { family: 'Feather', name: 'map' };
-    case 'smart-display':
-      return { family: 'Feather', name: 'play-circle' };
-    case 'assignment-turned-in':
-      return { family: 'Feather', name: 'activity' };
-    case 'person-outline':
-      return { family: 'Feather', name: 'user' };
-    default:
-      return { family: 'MaterialIcons', name: iconName };
-  }
+// ─── Tab Icon + Label Config ─────────────────────────────────────────────────
+// Each route name maps to a specific Ionicons icon (outline = inactive, filled = active)
+const TAB_CONFIG = {
+  Map: {
+    activeIcon: 'map',
+    inactiveIcon: 'map-outline',
+    label: 'Map',
+    family: 'Ionicons',
+  },
+  Highlights: {
+    activeIcon: 'play-circle',
+    inactiveIcon: 'play-circle-outline',
+    label: 'Highlights',
+    family: 'Ionicons',
+  },
+  Activity: {
+    activeIcon: 'flash',
+    inactiveIcon: 'flash-outline',
+    label: 'Activity',
+    family: 'Ionicons',
+  },
+  Profile: {
+    activeIcon: 'person',
+    inactiveIcon: 'person-outline',
+    label: 'Profile',
+    family: 'Ionicons',
+  },
 };
 
-// ─── Single Tab Item ─────────────────────────────────────────────────────────
-const TabItem = ({ tab, isActive, onPress, badgeCount }) => {
-  const scale = useRef(new Animated.Value(isActive ? 1.15 : 1)).current;
-  const translate = useRef(new Animated.Value(isActive ? -vs(4) : 0)).current;
-  const glowScale = useRef(new Animated.Value(isActive ? 1 : 0.6)).current;
-  const glowOpacity = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+// ─── Single Tab Item ──────────────────────────────────────────────────────────
+const TabItem = ({ routeName, label, isActive, onPress, badgeCount }) => {
+  const config = TAB_CONFIG[routeName] ?? {
+    activeIcon: 'ellipse',
+    inactiveIcon: 'ellipse-outline',
+    label: label ?? routeName,
+    family: 'Ionicons',
+  };
 
-  const iconConfig = mapIcon(tab.icon);
+  const translateY = useRef(new Animated.Value(isActive ? -vs(2) : 0)).current;
+  const labelOpacity = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+  const iconScale = useRef(new Animated.Value(isActive ? 1.08 : 1)).current;
+  const pillOpacity = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+  const pillScale = useRef(new Animated.Value(isActive ? 1 : 0.75)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scale, {
-        toValue: isActive ? 1.15 : 1,
+      Animated.spring(translateY, {
+        toValue: isActive ? -vs(2) : 0,
         useNativeDriver: true,
-        friction: 6,
-        tension: 40,
+        damping: 15,
+        stiffness: 160,
       }),
-      Animated.spring(translate, {
-        toValue: isActive ? -vs(4) : 0,
+      Animated.spring(iconScale, {
+        toValue: isActive ? 1.08 : 1,
         useNativeDriver: true,
-        friction: 6,
-        tension: 40,
+        damping: 15,
+        stiffness: 160,
       }),
-      Animated.spring(glowScale, {
-        toValue: isActive ? 1 : 0.6,
-        useNativeDriver: true,
-        friction: 6,
-        tension: 40,
-      }),
-      Animated.timing(glowOpacity, {
+      Animated.timing(labelOpacity, {
         toValue: isActive ? 1 : 0,
-        duration: 180,
+        duration: 160,
         useNativeDriver: true,
+      }),
+      Animated.spring(pillOpacity, {
+        toValue: isActive ? 1 : 0,
+        useNativeDriver: true,
+        damping: 18,
+        stiffness: 180,
+      }),
+      Animated.spring(pillScale, {
+        toValue: isActive ? 1 : 0.75,
+        useNativeDriver: true,
+        damping: 18,
+        stiffness: 180,
       }),
     ]).start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
-  const activeColor = Colors.primary;
-  const inactiveColor = Colors.gray500;
-
   return (
     <TouchableOpacity
       style={styles.tabItem}
-      onPress={() => onPress(tab.key)}
-      activeOpacity={0.8}
+      onPress={onPress}
+      activeOpacity={0.75}
       accessibilityRole="button"
-      accessibilityLabel={tab.label}
+      accessibilityLabel={config.label}
+      accessibilityState={{ selected: isActive }}
     >
-      <View style={styles.iconContainer}>
-        {/* Animated Wrapper for Glow, Icon and Badge to scale/shift together without overlapping */}
-        <Animated.View 
+      <Animated.View
+        style={[
+          styles.tabInner,
+          { transform: [{ translateY }, { scale: iconScale }] },
+        ]}
+      >
+        {/* Active pill background */}
+        <Animated.View
           style={[
-            styles.iconWrapper, 
-            { transform: [{ scale }, { translateY: translate }] }
+            styles.activePill,
+            {
+              opacity: pillOpacity,
+              transform: [{ scale: pillScale }],
+            },
           ]}
+        />
+
+        {/* Icon */}
+        <AppIcon
+          family={config.family}
+          name={isActive ? config.activeIcon : config.inactiveIcon}
+          size={ms(22)}
+          color={isActive ? '#2563EB' : Colors.gray500}
+        />
+
+        {/* Badge */}
+        {!!badgeCount && (
+          <View style={styles.badge}>
+            <CText
+              variant="label"
+              weight="bold"
+              color={Colors.white}
+              style={styles.badgeText}
+            >
+              {badgeCount > 99 ? '99+' : String(badgeCount)}
+            </CText>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Label — fades in when active */}
+      <Animated.View style={{ opacity: labelOpacity, height: vs(13) }}>
+        <CText
+          style={styles.tabLabel}
+          numberOfLines={1}
+          weight="semibold"
+          color="#2563EB"
         >
-          {/* Glow Background for Active Tab */}
-          <Animated.View
-            style={[
-              styles.glowBg,
-              {
-                opacity: glowOpacity,
-                transform: [{ scale: glowScale }]
-              },
-            ]}
-          />
-
-          <AppIcon
-            family={iconConfig.family}
-            name={iconConfig.name}
-            size={ms(26)}
-            color={isActive ? activeColor : inactiveColor}
-          />
-
-          {/* Badge inside the wrapper so it moves with the icon! */}
-          {!!badgeCount && (
-            <View style={styles.badge}>
-              <CText variant="label" weight="bold" color={Colors.white} style={styles.badgeText}>
-                {badgeCount > 99 ? '99+' : String(badgeCount)}
-              </CText>
-            </View>
-          )}
-        </Animated.View>
-      </View>
+          {config.label}
+        </CText>
+      </Animated.View>
     </TouchableOpacity>
   );
 };
 
 // ─── NavBar ───────────────────────────────────────────────────────────────────
 const NavBar = ({
-  // ─── Standalone props ──────────────────────────────────────────────────────
-  tabs,          // [{ key, label, icon, badge? }]
-  active,        // currently active key
-  onTabPress,    // (key) => void
+  // Standalone props
+  tabs,
+  active,
+  onTabPress,
 
-  // ─── React Navigation BottomTabNavigator props (auto-filled when used as tabBar) ─
+  // React Navigation BottomTabNavigator props
   state,
   descriptors,
   navigation,
 
-  // ─── Style overrides ────────────────────────────────────────────────────────
   style,
 }) => {
   const insets = useSafeAreaInsets();
-  const screenWidth = Dimensions.get('window').width;
-  
-  // Set initial width approximation to avoid layout flashes
-  const [width, setWidth] = useState(screenWidth - ms(32));
-  
-  const barHeight = vs(64);
-  const cutoutDepth = vs(30); // Deeper cutout curve for more organic milk-fold transition
 
-  const onLayout = (event) => {
-    const { width: layoutWidth } = event.nativeEvent.layout;
-    if (layoutWidth > 0) {
-      setWidth(layoutWidth);
-    }
-  };
-
-  // ─── Resolve tab list from either mode ─────────────────────────────────────
-  let resolvedTabs = tabs ?? [];
-  let resolvedActive = active;
-  let resolvedPress = onTabPress;
-
-  if (state && descriptors && navigation) {
-    resolvedTabs = state.routes.map((route) => {
-      const { options } = descriptors[route.key];
-      return {
-        key: route.key,
-        label: options.tabBarLabel ?? options.title ?? route.name,
-        icon: options.tabBarIcon ?? 'circle',
-        badge: options.tabBarBadge,
-      };
-    });
-    resolvedActive = state.routes[state.index]?.key;
-    resolvedPress = (key) => {
-      const route = state.routes.find((r) => r.key === key);
-      const isFocused = resolvedActive === key;
-      const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-      if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate({ name: route.name, merge: true });
-      }
-    };
-  }
-
-  // ─── SVG Path for Liquid Cutout ────────────────────────────────────────────
-  // Generates a floating tab bar outline with a smooth Bezier dip in the center
-  const r = ms(24); // Corner radius of floating bar
-  const centerX = width / 2;
-  const depth = cutoutDepth;
-  
-  const path = `M 0,${r} 
-                A ${r},${r} 0 0 1 ${r},0 
-                L ${centerX - ms(50)},0 
-                C ${centerX - ms(32)},0 ${centerX - ms(24)},${depth} ${centerX},${depth} 
-                C ${centerX + ms(24)},${depth} ${centerX + ms(32)},0 ${centerX + ms(50)},0 
-                L ${width - r},0 
-                A ${r},${r} 0 0 1 ${width},${r} 
-                L ${width},${barHeight - r} 
-                A ${r},${r} 0 0 1 ${width - r},${barHeight} 
-                L ${r},${barHeight} 
-                A ${r},${r} 0 0 1 0,${barHeight - r} 
-                Z`;
-
-  // FAB Spring Press Effect
+  // FAB press spring
   const fabScale = useRef(new Animated.Value(1)).current;
+
   const handleFabPress = () => {
     Animated.sequence([
-      Animated.timing(fabScale, {
-        toValue: 0.9,
-        duration: 100,
+      Animated.spring(fabScale, {
+        toValue: 0.88,
         useNativeDriver: true,
+        damping: 10,
+        stiffness: 200,
       }),
       Animated.spring(fabScale, {
         toValue: 1,
-        friction: 4,
         useNativeDriver: true,
+        damping: 8,
+        stiffness: 120,
       }),
     ]).start();
 
@@ -229,146 +206,190 @@ const NavBar = ({
     }
   };
 
+  // ── Resolve tabs from React Navigation or standalone props ────────────────
+  let resolvedTabs = [];
+  let resolvedActive = active;
+  let resolvedPress = onTabPress;
+
+  if (state && descriptors && navigation) {
+    resolvedTabs = state.routes.map((route) => {
+      const { options } = descriptors[route.key];
+      return {
+        key: route.key,
+        name: route.name,
+        label: options.tabBarLabel ?? options.title ?? route.name,
+        badge: options.tabBarBadge,
+      };
+    });
+    resolvedActive = state.routes[state.index]?.key;
+    resolvedPress = (key) => {
+      const route = state.routes.find((r) => r.key === key);
+      const isFocused = resolvedActive === key;
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true,
+      });
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate({ name: route.name, merge: true });
+      }
+    };
+  } else if (tabs) {
+    resolvedTabs = tabs.map((t) => ({ key: t.key, name: t.key, label: t.label, badge: t.badge }));
+  }
+
+  // Split into left (2) and right (2) around center FAB
+  const leftTabs = resolvedTabs.slice(0, 2);
+  const rightTabs = resolvedTabs.slice(2, 4);
+
   return (
     <View
-      onLayout={onLayout}
       pointerEvents="box-none"
       style={[
         styles.container,
-        { bottom: Math.max(insets.bottom, vs(12)) },
+        { paddingBottom: Math.max(insets.bottom + vs(8), vs(16)) },
         style,
       ]}
     >
-      {/* SVG Background Path with Custom Cutout */}
-      <View style={[styles.svgContainer, { width, height: barHeight }]}>
-        <Svg width={width} height={barHeight} viewBox={`0 0 ${width} ${barHeight}`}>
-          <Path d={path} fill={Colors.white} />
-        </Svg>
-      </View>
+      <View style={styles.bar}>
+        {/* Left tabs */}
+        <View style={styles.tabGroup}>
+          {leftTabs.map((tab) => (
+            <TabItem
+              key={tab.key}
+              routeName={tab.name}
+              label={tab.label}
+              isActive={resolvedActive === tab.key}
+              onPress={() => resolvedPress(tab.key)}
+              badgeCount={tab.badge}
+            />
+          ))}
+        </View>
 
-      {/* Tab Items Row (with a spacer for the central FAB) */}
-      <View style={[styles.rowContainer, { height: barHeight }]} pointerEvents="box-none">
-        {resolvedTabs.map((tab, index) => {
-          const isCenter = index === 2;
-          return (
-            <React.Fragment key={tab.key}>
-              {isCenter && <View style={styles.centerPlaceholder} />}
-              <TabItem
-                tab={tab}
-                isActive={resolvedActive === tab.key}
-                onPress={resolvedPress}
-                badgeCount={tab.badge}
+        {/* Center FAB */}
+        <View style={styles.fabSlot}>
+          <Animated.View style={{ transform: [{ scale: fabScale }] }}>
+            <TouchableOpacity
+              style={styles.fab}
+              activeOpacity={0.88}
+              onPress={handleFabPress}
+              accessibilityLabel="Create activity"
+              accessibilityRole="button"
+            >
+              <AppIcon
+                family="Ionicons"
+                name="add"
+                size={ms(28)}
+                color="#FFFFFF"
               />
-            </React.Fragment>
-          );
-        })}
-      </View>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
 
-      {/* Floating Center Button (FAB) container */}
-      {/* Positioned at the top of the container to be touch-accessible on Android */}
-      <View style={styles.fabContainer} pointerEvents="box-none">
-        <Animated.View style={{ transform: [{ scale: fabScale }] }}>
-          <TouchableOpacity
-            style={styles.centerButton}
-            activeOpacity={0.85}
-            onPress={handleFabPress}
-          >
-            <AppIcon family="Feather" name="plus" size={ms(28)} color={Colors.white} />
-          </TouchableOpacity>
-        </Animated.View>
+        {/* Right tabs */}
+        <View style={styles.tabGroup}>
+          {rightTabs.map((tab) => (
+            <TabItem
+              key={tab.key}
+              routeName={tab.name}
+              label={tab.label}
+              isActive={resolvedActive === tab.key}
+              onPress={() => resolvedPress(tab.key)}
+              badgeCount={tab.badge}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
 };
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    left: ms(16),
-    right: ms(16),
-    height: vs(88), // Taller wrapper to keep the raised FAB within the touchable bounds
-    backgroundColor: 'transparent',
-  },
-  svgContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    // Soft shadow casting around the custom SVG shape (supported natively on iOS)
-    shadowColor: '#1A0C3C',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 8, // Shadows for Android
-  },
-  rowContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: ms(12),
+  },
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: ms(32),
+    height: vs(68),
+    marginHorizontal: ms(8),
+    shadowColor: '#0A1629',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+    overflow: 'visible',
+  },
+  tabGroup: {
+    flex: 1,
     flexDirection: 'row',
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
+    paddingVertical: vs(6),
+    gap: vs(2),
   },
-  iconContainer: {
-    position: 'relative',
+  tabInner: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: ms(48),
-    height: ms(48),
-  },
-  iconWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: ms(48),
-    height: ms(48),
+    width: ms(44),
+    height: ms(36),
     position: 'relative',
   },
-  glowBg: {
+  activePill: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: ms(24),
-    backgroundColor: Colors.primaryGhost, // 8% opacity primary color
-    borderWidth: 1.5,
-    borderColor: 'rgba(133, 108, 226, 0.15)', // Soft outline matching active brand color
+    borderRadius: ms(12),
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
   },
-  centerPlaceholder: {
-    flex: 1,
-    height: '100%',
+  tabLabel: {
+    fontSize: normFont(10),
+    lineHeight: normFont(13),
+    color: '#2563EB',
+    letterSpacing: 0.1,
   },
-  fabContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: vs(88),
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  centerButton: {
-    width: ms(52),
-    height: ms(52),
-    borderRadius: ms(26),
-    backgroundColor: Colors.primary, // Matches the branding
+  // FAB
+  fabSlot: {
+    width: ms(72),
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: vs(4), // Aligns perfectly in the cutout depth
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
+  },
+  fab: {
+    width: ms(56),
+    height: ms(56),
+    borderRadius: ms(28),
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Tight, downward-only shadow — contained, premium
+    shadowColor: '#1d4ed8',
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 12,
+    elevation: 8,
+    // White ring for premium depth
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
   badge: {
     position: 'absolute',
-    top: -vs(2),
-    right: -ms(2),
+    top: -vs(3),
+    right: -ms(3),
     minWidth: ms(16),
     height: ms(16),
     borderRadius: ms(8),
@@ -381,6 +402,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: normFont(9),
+    lineHeight: normFont(11),
   },
 });
 

@@ -1,41 +1,77 @@
-import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+/**
+ * RecenterButton.js — Reskinned recenter / my-location FAB
+ *
+ * Circular (42px), white background, blue navigation icon, premium shadow.
+ * Press-in spring scale feedback.
+ */
+
+import React, { useRef } from 'react';
+import { TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { Colors, ms, vs } from '../../../Reusable-Component';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { ms, vs } from '../../../Reusable-Component';
+
+const NAV_BAR_HEIGHT = vs(80);
 
 const RecenterButton = ({ onPress }) => {
   const insets = useSafeAreaInsets();
-  // Position it dynamically above the floating absolute bottom tab bar (NavBar height: 88 + bottom margin: max(insets, 12) + gap: 16)
-  const bottomOffset = vs(88) + Math.max(insets.bottom, vs(12)) + vs(16);
+  const scale  = useRef(new Animated.Value(1)).current;
+
+  const bottomOffset = NAV_BAR_HEIGHT + Math.max(insets.bottom, vs(8)) + vs(16) + ms(42) + ms(12);
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      damping: 15,
+      stiffness: 300,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 12,
+      stiffness: 200,
+    }).start();
+  };
 
   return (
-    <TouchableOpacity 
-      style={[styles.recenterButton, { bottom: bottomOffset }]} 
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <MaterialIcons name="my-location" size={ms(22)} color={Colors.text} />
-    </TouchableOpacity>
+    <Animated.View style={[styles.wrapper, { bottom: bottomOffset, transform: [{ scale }] }]}>
+      <TouchableOpacity
+        style={styles.btn}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+        accessibilityLabel="Re-center map to my location"
+      >
+        <Ionicons name="locate" size={ms(18)} color="#2563EB" />
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  recenterButton: {
+  wrapper: {
     position: 'absolute',
-    right: ms(26),
-    backgroundColor: Colors.white,
-    width: ms(54),
-    height: ms(54),
-    borderRadius: ms(22),
+    right: ms(25),
+     top: ms(775),
+    zIndex: 20,
+  },
+  btn: {
+    width: ms(42),
+    height: ms(42),
+    borderRadius: ms(21),
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.black,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-    zIndex: 10,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
 });
 

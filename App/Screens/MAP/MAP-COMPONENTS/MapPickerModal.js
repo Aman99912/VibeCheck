@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
-import { CText, AppIcon, AppButton, Colors, ms, vs } from '../../../Reusable-Component';
+import { CText, AppIcon, AppButton, Colors, ms, vs, BackButton } from '../../../Reusable-Component';
 import MapRender from './MapRender';
 
 const MapPickerModal = ({ visible, onClose, onSelectLocation, initialLocation }) => {
@@ -118,9 +118,12 @@ const MapPickerModal = ({ visible, onClose, onSelectLocation, initialLocation })
 
         {/* ── Floating Header ──────────────────────────────────── */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.8}>
-            <AppIcon family="MaterialIcons" name="arrow-back" size={ms(22)} color={Colors.text} />
-          </TouchableOpacity>
+          <BackButton
+            onPress={onClose}
+            color={Colors.text}
+            size={ms(24)}
+            containerStyle={styles.closeButton}
+          />
           <CText variant="h4" weight="semibold" style={styles.headerTitle}>
             Choose Location
           </CText>

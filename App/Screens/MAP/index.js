@@ -1,28 +1,42 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, StyleSheet, PermissionsAndroid, Platform, AppState, Linking } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  PermissionsAndroid,
+  Platform,
+  AppState,
+  Linking,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from 'react-native-geolocation-service';
+
+// ── Map layer ────────────────────────────────────────────────────────────────
 import MapRender, { DUMMY_PINS } from './MAP-COMPONENTS/MapRender';
-import LocationSelector from './MAP-COMPONENTS/LocationSelector';
-import FilterButton from './MAP-COMPONENTS/FilterButton';
-import RecenterButton from './MAP-COMPONENTS/RecenterButton';
+
+// ── Rebuilt UI Components ────────────────────────────────────────────────────
+import MapHeader        from './MAP-COMPONENTS/MapHeader';
+import RecenterButton   from './MAP-COMPONENTS/RecenterButton';
 import MapModalLocation from './MAP-COMPONENTS/MapModalLocation';
-import ViewPin from './MAP-COMPONENTS/ViewPin';
-import AcceptSuccess from './MAP-COMPONENTS/AcceptSuccess';
+import ViewPin          from './MAP-COMPONENTS/ViewPin';
 import AcceptActivityIsland from './MAP-COMPONENTS/accept-activity-island';
 
 const MapScreen = () => {
-  const mapRef = useRef(null);
+  const mapRef    = useRef(null);
   const navigation = useNavigation();
-  const [hasPermission, setHasPermission] = useState(null);
-  const [isPermanentDenial, setIsPermanentDenial] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationName, setLocationName] = useState('Fetching location...');
-  const [selectedPin, setSelectedPin] = useState(null);
-  const [viewPinVisible, setViewPinVisible] = useState(false);
-  const [successVisible, setSuccessVisible] = useState(false);
-  const [joinedPinIds, setJoinedPinIds] = useState([]);
 
+  // ── Permission + location state ───────────────────────────────────────────
+  const [hasPermission,    setHasPermission]    = useState(null);
+  const [isPermanentDenial, setIsPermanentDenial] = useState(false);
+  const [userLocation,     setUserLocation]     = useState(null);
+  const [locationName,     setLocationName]     = useState('Fetching location...');
+
+  // ── Pin / Sheet state ─────────────────────────────────────────────────────
+  const [selectedPin,      setSelectedPin]      = useState(null);
+  const [viewPinVisible,   setViewPinVisible]   = useState(false);
+  const [joinedPinIds,     setJoinedPinIds]     = useState([]);
+  const [activeFilter,     setActiveFilter]     = useState('all');
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const getMappedPin = (pinId) => {
     const pinObj = DUMMY_PINS.find(p => p.id === pinId);
     if (!pinObj) return null;
@@ -37,63 +51,59 @@ const MapScreen = () => {
 
   const joinedPin = joinedPinIds.length > 0 ? getMappedPin(joinedPinIds[0]) : null;
 
+  // ── Reverse geocoding ─────────────────────────────────────────────────────
   const reverseGeocodeAndSet = async (latitude, longitude) => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-        {
-          headers: {
-            'User-Agent': 'VibeMatch/1.0 (Mobile App)'
-          }
-        }
+        { headers: { 'User-Agent': 'VibeCheck/1.0 (Mobile App)' } }
       );
       const data = await response.json();
       if (data && data.address) {
-        const name = data.address.city || data.address.town || data.address.village || data.address.suburb || 'Current Location';
+        const name =
+          data.address.suburb ||
+          data.address.neighbourhood ||
+          data.address.city ||
+          data.address.town ||
+          data.address.village ||
+          'Current Location';
         setLocationName(name);
       } else {
         setLocationName('Current Location');
       }
-    } catch (error) {
-      console.warn('Reverse geocoding error:', error);
+    } catch {
       setLocationName('Current Location');
     }
   };
 
+  // ── Location fetch (two-step: fast low-accuracy → precise GPS) ────────────
   const fetchLocation = () => {
     setLocationName('Fetching location...');
 
-    // 1️⃣ Fast fetch — low accuracy first (instant, uses network/cached GPS)
     Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         reverseGeocodeAndSet(latitude, longitude);
 
-        // 2️⃣ Silent upgrade — high accuracy GPS in background (takes longer)
+        // Silent upgrade to high-accuracy GPS
         Geolocation.getCurrentPosition(
-          (precisePos) => {
-            const { latitude: pLat, longitude: pLng } = precisePos.coords;
-            setUserLocation({ lat: pLat, lng: pLng });
-            reverseGeocodeAndSet(pLat, pLng);
+          (precise) => {
+            setUserLocation({ lat: precise.coords.latitude, lng: precise.coords.longitude });
+            reverseGeocodeAndSet(precise.coords.latitude, precise.coords.longitude);
           },
-          () => {}, // ignore — we already have low-accuracy result
+          () => {},
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       },
-      (error) => {
-        console.warn('Location fetch error:', error);
-        // Fallback: try high accuracy directly
+      () => {
         Geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
             setUserLocation({ lat: latitude, lng: longitude });
             reverseGeocodeAndSet(latitude, longitude);
           },
-          (finalError) => {
-            console.warn('Location fetch final error:', finalError);
-            setLocationName('Location unavailable');
-          },
+          () => setLocationName('Location unavailable'),
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
         );
       },
@@ -101,40 +111,31 @@ const MapScreen = () => {
     );
   };
 
-  // Check permission silently
+  // ── Permission management ─────────────────────────────────────────────────
   const checkLocationPermission = async () => {
     if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+      const granted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
       setHasPermission(granted);
       if (granted) setIsPermanentDenial(false);
     } else if (Platform.OS === 'ios') {
       try {
         const auth = await Geolocation.requestAuthorization('whenInUse');
-        if (auth === 'granted' || auth === 'restricted') {
-          setHasPermission(true);
-        } else {
-          setHasPermission(false);
-        }
-      } catch (err) {
-        console.warn('iOS Permission request error:', err);
+        setHasPermission(auth === 'granted' || auth === 'restricted');
+      } catch {
         setHasPermission(false);
       }
     }
   };
 
-  // Request permission explicitly
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
-      if (isPermanentDenial) {
-        Linking.openSettings();
-        return;
-      }
-      
+      if (isPermanentDenial) { Linking.openSettings(); return; }
       try {
         const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
         );
-        
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           setHasPermission(true);
           setIsPermanentDenial(false);
@@ -147,60 +148,69 @@ const MapScreen = () => {
       } catch (err) {
         console.warn(err);
       }
-    } else if (Platform.OS === 'ios') {
+    } else {
       Linking.openSettings();
     }
   };
 
-  // Check on mount and on AppState change (returning from settings)
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   useEffect(() => {
     checkLocationPermission();
-    
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      if (nextAppState === 'active') {
-        checkLocationPermission();
-      }
-    });
 
-    return () => {
-      subscription.remove();
-    };
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') checkLocationPermission();
+    });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
-    if (hasPermission) {
-      fetchLocation();
-    }
+    if (hasPermission) fetchLocation();
   }, [hasPermission]);
 
-  // Show nothing while checking initially
+  // ── Initial render guard ──────────────────────────────────────────────────
   if (hasPermission === null) {
     return <View style={styles.container} />;
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
       {hasPermission ? (
         <>
-          {/* Background Map layer */}
+          {/* ── Background Map (Leaflet WebView) ──────────────────────── */}
           <MapRender
             ref={mapRef}
             userLocation={userLocation}
+            isModalOpen={viewPinVisible}
             onMarkerPress={(pin) => {
               setSelectedPin(pin);
               setViewPinVisible(true);
             }}
+            onMapPress={() => {
+              if (viewPinVisible) {
+                setViewPinVisible(false);
+                setSelectedPin(null);
+              }
+            }}
+            activeFilter={activeFilter}
           />
 
-          {/* Floating UI Overlays */}
-          <LocationSelector 
-            locationName={locationName} 
-            onPress={() => fetchLocation()} 
+          {/* ── Map Header (hamburger + location pill + filter chips) ─── */}
+          <MapHeader
+            locationName={locationName}
+            activeFilter={activeFilter}
+            onLocationPress={() => fetchLocation()}
+            onFilterChange={(filterId) => setActiveFilter(filterId)}
+            onHamburgerPress={(isOpen) => console.log('[MapScreen] Menu:', isOpen)}
+            onNotificationPress={() => navigation.navigate('Notification')}
+            onSettingsPress={() => console.log('[MapScreen] Settings')}
           />
-          <FilterButton onPress={() => console.log('Filter pressed')} />
+
+          {/* ── Recenter button ─────────────────────────────────────────────── */}
           <RecenterButton onPress={() => mapRef.current?.recenterToUser()} />
 
-          {joinedPin && (
+          {/* ── Active Vibe Island (when user has joined a vibe) ──────── */}
+          {joinedPin && (!viewPinVisible || (selectedPin && selectedPin.id !== joinedPin.id)) && (
             <AcceptActivityIsland
               activity={joinedPin}
               onPress={() => {
@@ -210,7 +220,7 @@ const MapScreen = () => {
             />
           )}
 
-          {/* Screen 3: Pin Details View */}
+          {/* ── Activity Detail Bottom Sheet ─────────────────────────── */}
           <ViewPin
             visible={viewPinVisible}
             onClose={() => {
@@ -223,36 +233,18 @@ const MapScreen = () => {
               if (selectedPin) {
                 setJoinedPinIds((prev) => [...prev, selectedPin.id]);
               }
-              setViewPinVisible(false);
-              setSuccessVisible(true);
             }}
             onLeaveVibe={(pinId, reason) => {
-              console.log(`[MapScreen] User left pin ${pinId} with reason: "${reason}"`);
+              console.log(`[MapScreen] Left pin ${pinId}: "${reason}"`);
               setJoinedPinIds((prev) => prev.filter(id => id !== pinId));
               setViewPinVisible(false);
               setSelectedPin(null);
             }}
           />
-
-          {/* Screen 6: Accept Success */}
-          <AcceptSuccess
-            visible={successVisible}
-            onClose={() => {
-              setSuccessVisible(false);
-              setSelectedPin(null);
-            }}
-            pin={selectedPin}
-            onOpenChat={() => {
-              setSuccessVisible(false);
-              setSelectedPin(null);
-              // Navigate to the Activity tab screen which contains our current vibes and chats
-              navigation.navigate('Activity');
-            }}
-          />
         </>
       ) : (
-        <MapModalLocation 
-          onRequestPermission={requestLocationPermission} 
+        <MapModalLocation
+          onRequestPermission={requestLocationPermission}
           isSettingsFallback={isPermanentDenial}
         />
       )}
@@ -263,7 +255,7 @@ const MapScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f3f0', // Match Voyager map bg
+    backgroundColor: '#E8E4D9', // Map beige — matches warm map background
   },
 });
 

@@ -79,7 +79,7 @@ const AcceptActivityIsland = ({ activity, onPress }) => {
   });
 
   return (
-    <View style={[styles.container, { top: Math.max(insets.top, vs(10)) + vs(64) }]}>
+    <View style={[styles.container, { top: Math.max(insets.top, vs(10)) + vs(100) }]}>
       <TouchableOpacity
         style={[styles.pill, { width: pillWidth, height: pillHeight }]}
         onPress={onPress}
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   pill: {
-    backgroundColor: 'rgba(10, 22, 41, 0.92)', // sleek dark Gen-Z dynamic island backing
+    backgroundColor: 'rgba(0, 0, 0, 0.92)', // sleek dark Gen-Z dynamic island backing
     borderRadius: ms(25),
     justifyContent: 'center',
     paddingHorizontal: ms(16),

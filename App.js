@@ -11,6 +11,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AuthFlow from './App/Screens/AUTH';
 import MainTabs from './App/Screens/MAIN';
 import CreatePinScreen from './App/Screens/MAP/MAP-SCREENS/Create-Request';
+import NotificationScreen from './App/Screens/MAIN/component-main/notification';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,7 @@ function MainStack({ onLogout }) {
         {(props) => <MainTabs {...props} onLogout={onLogout} />}
       </Stack.Screen>
       <Stack.Screen name="CreatePin" component={CreatePinScreen} />
+      <Stack.Screen name="Notification" component={NotificationScreen} />
     </Stack.Navigator>
   );
 }

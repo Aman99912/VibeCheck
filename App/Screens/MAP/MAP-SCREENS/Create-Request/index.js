@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Header, InputBox, AppButton, AppIcon, Colors, ms, vs, CText } from '../../../../Reusable-Component';
+import { Header, InputBox, AppButton, AppIcon, Colors, ms, vs, CText, normFont } from '../../../../Reusable-Component';
 import CategorySelector from './CreateRequest-COMPONENT/CategorySelector';
 import CounterInput from './CreateRequest-COMPONENT/CounterInput';
-import VisibilitySelector from './CreateRequest-COMPONENT/VisibilitySelector';
+import DurationSlider from './CreateRequest-COMPONENT/DurationSlider';
 import MapPickerModal from '../../MAP-COMPONENTS/MapPickerModal';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const CreatePinScreen = () => {
   const navigation = useNavigation();
 
+  const [activityType, setActivityType] = useState('group'); // 'individual' | 'group'
   const [category, setCategory] = useState('sports');
   const [title, setTitle] = useState('');
-  const [locationName, setLocationName] = useState('');
   const [mapLocation, setMapLocation] = useState(null);
   const [isMapPickerVisible, setIsMapPickerVisible] = useState(false);
-  const [dateTime, setDateTime] = useState('Today, 6:00 PM');
+  
+  // Date/Time
+  const [dateObj, setDateObj] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  
   const [peopleLimit, setPeopleLimit] = useState(8);
-  const [duration, setDuration] = useState('2 Hours');
+  const [durationHours, setDurationHours] = useState(2);
   const [description, setDescription] = useState('');
 
   const handleClose = () => {
@@ -25,9 +31,8 @@ const CreatePinScreen = () => {
   };
 
   const handleCreate = () => {
-    // Add logic for create pin
     console.log('Create Pin Data:', {
-      category, title, locationName, mapLocation, dateTime, peopleLimit, duration, description
+      activityType, category, title, mapLocation, date: dateObj, peopleLimit, durationHours, description
     });
     navigation.goBack();
   };
@@ -35,10 +40,10 @@ const CreatePinScreen = () => {
   return (
     <View style={styles.container}>
       <Header 
-        title="Create Pin" 
+        title="Create Vibe" 
         leftElement={
           <TouchableOpacity onPress={handleClose} style={styles.closeBtn} hitSlop={{top:10, bottom:10, left:10, right:10}}>
-            <AppIcon family="MaterialIcons" name="close" size={ms(24)} color={Colors.text} />
+            <AppIcon family="Ionicons" name="close" size={ms(24)} color={Colors.textPrimary || '#111'} />
           </TouchableOpacity>
         }
       />
@@ -49,6 +54,29 @@ const CreatePinScreen = () => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
+          {/* ── Segmented Control (Individual / Group) ── */}
+          <View style={styles.segmentContainer}>
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              style={[styles.segmentBtn, activityType === 'individual' && styles.segmentBtnActive]}
+              onPress={() => setActivityType('individual')}
+            >
+              <CText style={[styles.segmentText, activityType === 'individual' && styles.segmentTextActive]}>
+                Individual
+              </CText>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              style={[styles.segmentBtn, activityType === 'group' && styles.segmentBtnActive]}
+              onPress={() => setActivityType('group')}
+            >
+              <CText style={[styles.segmentText, activityType === 'group' && styles.segmentTextActive]}>
+                Group
+              </CText>
+            </TouchableOpacity>
+          </View>
+
           <CategorySelector 
             selectedCategory={category} 
             onSelectCategory={setCategory} 
@@ -62,107 +90,93 @@ const CreatePinScreen = () => {
               onChangeText={setTitle}
               maxLength={40}
               hideLeftIcon
+              containerStyle={styles.flatInput}
             />
           </View>
 
-          <View style={styles.formGroup}>
-            <InputBox
-              label="Location Name (Venue/Place)"
-              placeholder="e.g. Sector 12 Stadium, Hyatt Hotel..."
-              value={locationName}
-              onChangeText={setLocationName}
-              leftIcon="location-on"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <CText variant="body3" weight="semibold" style={styles.selectorLabel}>
-              Map Pin Location
-            </CText>
-            <TouchableOpacity 
-              style={styles.mapSelector} 
-              onPress={() => setIsMapPickerVisible(true)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.mapSelectorLeft}>
-                <View style={styles.mapIconWrapper}>
-                  <AppIcon family="MaterialIcons" name="map" size={ms(20)} color={Colors.primary} />
-                </View>
-                <View style={{ marginLeft: ms(12), flex: 1 }}>
-                  <CText 
-                    variant="body2" 
-                    weight="semibold" 
-                    style={[
-                      styles.mapSelectorValue, 
-                      !mapLocation && { color: Colors.textMuted || '#888' }
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {mapLocation ? mapLocation.name : 'Choose pin from map (Required)'}
+          {/* ── Ultra Minimal Map Selector ── */}
+          <TouchableOpacity 
+            style={styles.minimalRow} 
+            onPress={() => setIsMapPickerVisible(true)}
+            activeOpacity={0.6}
+          >
+            <View style={styles.minimalRowLeft}>
+              <AppIcon family="Ionicons" name="map-outline" size={ms(20)} color={Colors.textPrimary} />
+              <View style={styles.minimalRowTextWrap}>
+                <CText style={[styles.minimalRowValue, !mapLocation && { color: Colors.textMuted }]}>
+                  {mapLocation ? mapLocation.name : 'Pin Exact Location on Map'}
+                </CText>
+                {mapLocation && (
+                  <CText style={styles.coordinatesText}>
+                    {mapLocation.latitude.toFixed(4)}, {mapLocation.longitude.toFixed(4)}
                   </CText>
-                  {mapLocation && (
-                    <CText variant="caption" weight="medium" style={styles.coordinatesText}>
-                      Lat: {mapLocation.latitude.toFixed(4)}, Lng: {mapLocation.longitude.toFixed(4)}
-                    </CText>
-                  )}
-                </View>
+                )}
               </View>
-              <AppIcon family="MaterialIcons" name="chevron-right" size={ms(20)} color={Colors.textMuted || '#888'} />
-            </TouchableOpacity>
-          </View>
+            </View>
+            <AppIcon family="Ionicons" name="chevron-forward" size={ms(18)} color={Colors.textMuted} />
+          </TouchableOpacity>
 
-          <View style={styles.formGroup}>
-            <InputBox
-              label="Date & Time"
-              value={dateTime}
-              onChangeText={setDateTime}
-              leftIcon="calendar-today"
-              rightIcon="calendar-month"
-            />
-          </View>
+          {/* ── Native Date & Time Picker ── */}
+          <TouchableOpacity 
+            style={styles.minimalRow} 
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.6}
+          >
+            <View style={styles.minimalRowLeft}>
+              <AppIcon family="Ionicons" name="calendar-outline" size={ms(20)} color={Colors.textPrimary} />
+              <View style={styles.minimalRowTextWrap}>
+                <CText style={styles.minimalRowValue}>
+                  {dateObj.toLocaleDateString()} at {dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </CText>
+                <CText style={styles.coordinatesText}>Tap to change Date & Time</CText>
+              </View>
+            </View>
+            <AppIcon family="Ionicons" name="chevron-forward" size={ms(18)} color={Colors.textMuted} />
+          </TouchableOpacity>
 
-          <CounterInput 
-            label="People Limit"
-            value={peopleLimit}
-            onValueChange={setPeopleLimit}
-            min={2}
-            max={20}
+          {/* ── Custom Duration Slider ── */}
+          <DurationSlider 
+            value={durationHours}
+            onValueChange={setDurationHours}
+            min={1}
+            max={10}
           />
 
-          <View style={styles.formGroup}>
-            <InputBox
-              label="Duration"
-              value={duration}
-              onChangeText={setDuration}
-              hideLeftIcon
-              rightIcon="keyboard-arrow-down"
+          {/* ── People Limit (Only for Group) ── */}
+          {activityType === 'group' && (
+            <CounterInput 
+              label="People Limit"
+              value={peopleLimit}
+              onValueChange={setPeopleLimit}
+              min={2}
+              max={20}
             />
-          </View>
+          )}
 
           <View style={styles.formGroup}>
             <InputBox
               label="Description (Optional)"
-              placeholder="Let's play and have fun!"
+              placeholder="What are the vibes?"
               value={description}
               onChangeText={setDescription}
               type="multiline"
-              maxLength={100}
+              maxLength={150}
               hideLeftIcon
+              containerStyle={styles.flatInput}
             />
           </View>
 
-          <VisibilitySelector onPress={() => console.log('Change Visibility')} />
-
-          {/* Bottom spacer for scroll area so button doesn't cover content */}
-          <View style={{ height: vs(100) }} />
+          {/* Spacer so content clears the bottom absolute button */}
+          <View style={{ height: vs(120) }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
       <View style={styles.bottomContainer}>
         <AppButton 
-          title="Create Pin" 
+          title="Create Vibe" 
           onPress={handleCreate} 
-          disabled={!title || !locationName || !mapLocation}
+          disabled={!title || !mapLocation}
+          style={styles.createBtn}
         />
       </View>
 
@@ -171,20 +185,53 @@ const CreatePinScreen = () => {
         onClose={() => setIsMapPickerVisible(false)}
         onSelectLocation={(locData) => {
           setMapLocation(locData);
-          // Auto-fill manual place name if it is currently empty
-          if (!locationName && locData.name) {
-            setLocationName(locData.name);
-          }
         }}
       />
+
+      {(showDatePicker || showTimePicker) && (
+        <DateTimePicker
+          value={dateObj}
+          mode={showDatePicker ? 'date' : 'time'}
+          display="default"
+          minimumDate={new Date()}
+          onChange={(event, selectedDate) => {
+            if (showDatePicker) {
+              setShowDatePicker(false);
+              if (selectedDate) {
+                if (selectedDate < new Date()) {
+                  // If they select a time that has already passed today, snap back to current time
+                  setDateObj(new Date());
+                } else {
+                  setDateObj(selectedDate);
+                }
+                if (Platform.OS === 'android') {
+                  setTimeout(() => setShowTimePicker(true), 100);
+                }
+              }
+            } else if (showTimePicker) {
+              setShowTimePicker(false);
+              if (selectedDate) {
+                if (selectedDate < new Date()) {
+                  // If chosen time is in the past, snap to now
+                  setDateObj(new Date());
+                } else {
+                  setDateObj(selectedDate);
+                }
+              }
+            }
+          }}
+        />
+      )}
     </View>
+    
   );
+  
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.lightBackground || '#F8F9FA',
+    backgroundColor: '#FFFFFF', // Clean pure white for premium feel
   },
   closeBtn: {
     padding: ms(8),
@@ -192,59 +239,110 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: vs(24),
   },
+  
+  // Segmented Control
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    marginHorizontal: ms(20),
+    marginTop: vs(16),
+    marginBottom: vs(12),
+    borderRadius: ms(12),
+    padding: ms(4),
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: vs(10),
+    alignItems: 'center',
+    borderRadius: ms(10),
+  },
+  segmentBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  segmentText: {
+    fontSize: normFont(13),
+    fontWeight: '600',
+    color: Colors.textMuted || '#6B7280',
+  },
+  segmentTextActive: {
+    color: Colors.textPrimary || '#111827',
+  },
+
+  // Flat Inputs
   formGroup: {
-    paddingHorizontal: ms(16),
-    marginTop: vs(6),
+    paddingHorizontal: ms(20),
+    marginTop: vs(12),
   },
-  selectorLabel: {
-    color: Colors.text,
-    marginBottom: vs(8),
-    fontSize: ms(12),
+  rowGroup: {
+    flexDirection: 'row',
+    paddingHorizontal: ms(20),
+    marginTop: vs(12),
   },
-  mapSelector: {
+  flatInput: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderColor: '#EFEFEF',
+    borderRadius: 0,
+    paddingHorizontal: 0,
+  },
+  
+  // Ultra Minimal Row Selector
+  minimalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    borderRadius: ms(12),
-    paddingHorizontal: ms(16),
-    paddingVertical: vs(12),
-    minHeight: vs(54),
+    paddingHorizontal: ms(20),
+    paddingVertical: vs(18),
+    borderBottomWidth: 1,
+    borderColor: '#EFEFEF',
+    marginTop: vs(8),
   },
-  mapSelectorLeft: {
+  minimalRowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  mapIconWrapper: {
-    width: ms(36),
-    height: ms(36),
-    borderRadius: ms(18),
-    backgroundColor: Colors.primary + '15',
-    justifyContent: 'center',
-    alignItems: 'center',
+  minimalRowTextWrap: {
+    marginLeft: ms(12),
+    flex: 1,
   },
-  mapSelectorValue: {
-    color: Colors.text,
-    fontSize: ms(14),
+  minimalRowValue: {
+    fontSize: normFont(14),
+    fontWeight: '500',
+    color: Colors.textPrimary,
   },
   coordinatesText: {
-    color: Colors.textMuted || '#888',
-    marginTop: vs(1),
+    fontSize: normFont(11),
+    color: Colors.textMuted,
+    marginTop: vs(2),
   },
+
+  // Bottom Area
   bottomContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: ms(16),
-    paddingBottom: vs(24),
+    paddingHorizontal: ms(20),
+    paddingBottom: vs(24), // Accounting for safe area
     paddingTop: vs(16),
-    backgroundColor: Colors.lightBackground || '#F8F9FA',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: '#F0F0F0',
+  },
+  createBtn: {
+    borderRadius: ms(14),
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
 

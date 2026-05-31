@@ -2,177 +2,77 @@ import React from 'react';
 import {
   Modal,
   View,
-  ScrollView,
   Image,
   StyleSheet,
   TouchableOpacity,
+  Dimensions,
+  Animated,
 } from 'react-native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, CText, AppButton, ms, vs, normFont } from '../../../Reusable-Component';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Colors, CText, ms, vs, normFont } from '../../../Reusable-Component';
 
-const HostProfile = ({ visible, onClose, host }) => {
-  const insets = useSafeAreaInsets();
-  
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const HostProfile = ({ visible, onClose, host, accentColor: propAccent }) => {
+  const accentColor = propAccent || '#2563EB';
+
   if (!host) return null;
-  
-  const name = host.name || 'Arjun';
-  const avatar = host.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&fit=crop';
-  const joined = host.joined || 'Joined 2 years ago';
-  
-  // Mock host statistics
-  const rating = '4.9 ★';
-  const totalVibes = '42';
-  const vibeScore = '980 pts';
-  const bio = 'Hey there! I love organizing casual sports matches, weekend coffee sessions, and late-night acoustic music jams. Always looking to meet new people and vibe together!';
-  const tags = ['⚽ Soccer', '☕ Coffee', '🎵 Acoustic Jam', '🚲 Cycling', '🌍 Travel'];
+
+  const name    = host.name   || 'Arjun';
+  const avatar  = host.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&fit=crop';
+  const joined  = host.joined || 'Joined 2 years ago';
+  const bio     = host.bio    || 'Hey there! I love organizing casual sports matches, weekend coffee sessions, and late-night acoustic music jams.';
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <View style={styles.rootContainer}>
-        {/* Header Overlay */}
-        <View style={[styles.header, { paddingTop: Math.max(insets.top, vs(12)) }]}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            activeOpacity={0.8}
-            onPress={onClose}
-          >
-            <MaterialIcons name="arrow-back" size={ms(22)} color={Colors.textPrimary} />
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <View style={styles.overlay}>
+        {/* Tap outside to close */}
+        <TouchableOpacity style={styles.dismissArea} activeOpacity={1} onPress={onClose} />
+        
+        <View style={styles.card}>
+          
+          {/* Close Button */}
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
+            <Ionicons name="close" size={ms(20)} color={Colors.textSecondary} />
           </TouchableOpacity>
-          <CText variant="h3" weight="bold" color={Colors.textPrimary}>
-            Host Profile
-          </CText>
-          <View style={{ width: ms(42) }} /> {/* spacing spacer */}
-        </View>
 
-        {/* Scroll Content */}
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, vs(16)) + vs(40) }]}
-          showsVerticalScrollIndicator={false}
-          overScrollMode="never"
-        >
-          {/* Main User Card Details */}
-          <View style={styles.profileHeaderContainer}>
-            <View style={styles.avatarGlowRing}>
-              <Image source={{ uri: avatar }} style={styles.avatar} />
+          {/* Avatar Area */}
+          <View style={styles.headerRow}>
+            <View style={styles.avatarWrap}>
+              <Image source={{ uri: avatar }} style={styles.avatarImg} />
+              
             </View>
-            <CText variant="h2" weight="bold" color={Colors.textPrimary} style={styles.name}>
-              {name}
-            </CText>
-            <View style={styles.joinedBadge}>
-              <MaterialIcons name="verified-user" size={ms(12)} color={Colors.primary} style={{ marginRight: ms(4) }} />
-              <CText variant="caption" weight="semibold" color={Colors.textSecondary}>
-                {joined}
-              </CText>
+
+            <View style={styles.headerTextInfo}>
+              <View style={styles.nameRow}>
+                <View style={{flexDirection:'row',alignItems:'center',gap:ms(5)}}>
+
+                
+                <CText style={styles.hostName}>{name}</CText>
+                <View style={{top:ms(-1)}}><Ionicons name="checkmark-circle" size={ms(18)} color={accentColor} /></View>
+                </View>
+              </View>
+              <CText style={styles.hostJoined}>{joined}</CText>
             </View>
           </View>
 
-          {/* Stats Section */}
+          {/* Minimal Stats */}
           <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <CText variant="h3" weight="bold" color={Colors.primary}>
-                {rating}
-              </CText>
-              <CText variant="caption" color={Colors.textMuted} weight="medium">
-                Rating
-              </CText>
+            <View style={styles.statItem}>
+              <Ionicons name="star" size={ms(14)} color="#F59E0B" />
+              <CText style={styles.statText}>4.9 Rating</CText>
             </View>
-            <View style={styles.statCard}>
-              <CText variant="h3" weight="bold" color={Colors.primary}>
-                {totalVibes}
-              </CText>
-              <CText variant="caption" color={Colors.textMuted} weight="medium">
-                Vibes Hosted
-              </CText>
-            </View>
-            <View style={styles.statCard}>
-              <CText variant="h3" weight="bold" color={Colors.primary}>
-                {vibeScore}
-              </CText>
-              <CText variant="caption" color={Colors.textMuted} weight="medium">
-                Vibe Score
-              </CText>
+            <View style={styles.statDot} />
+            <View style={styles.statItem}>
+              <Ionicons name="people" size={ms(14)} color={Colors.textSecondary} />
+              <CText style={styles.statText}>42 Vibes</CText>
             </View>
           </View>
 
-          {/* Bio Section */}
-          <View style={styles.section}>
-            <CText variant="body" weight="bold" color={Colors.textPrimary} style={styles.sectionTitle}>
-              About Host
-            </CText>
-            <View style={styles.cardContainer}>
-              <CText variant="body" color={Colors.textSecondary} style={styles.bioText}>
-                {bio}
-              </CText>
-            </View>
-          </View>
+          {/* Bio */}
+          <CText style={styles.sectionTitle}>About</CText>
+          <CText style={styles.bioText}>{bio}</CText>
 
-          {/* Tags Section */}
-          <View style={styles.section}>
-            <CText variant="body" weight="bold" color={Colors.textPrimary} style={styles.sectionTitle}>
-              Interests & Vibes
-            </CText>
-            <View style={styles.tagsWrapper}>
-              {tags.map((tag, idx) => (
-                <View key={idx} style={styles.tag}>
-                  <CText variant="body2" weight="semibold" color={Colors.primary}>
-                    {tag}
-                  </CText>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Host Badges Section */}
-          <View style={styles.section}>
-            <CText variant="body" weight="bold" color={Colors.textPrimary} style={styles.sectionTitle}>
-              Achievements
-            </CText>
-            <View style={styles.badgeRow}>
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeIconBg, { backgroundColor: '#FFEEDB' }]}>
-                  <MaterialIcons name="local-fire-department" size={ms(24)} color="#FF9500" />
-                </View>
-                <CText variant="caption" weight="bold" color={Colors.textPrimary} style={{ marginTop: vs(6) }}>
-                  Super Host
-                </CText>
-              </View>
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeIconBg, { backgroundColor: '#E5F6FF' }]}>
-                  <MaterialIcons name="thumb-up" size={ms(20)} color="#00A3FF" />
-                </View>
-                <CText variant="caption" weight="bold" color={Colors.textPrimary} style={{ marginTop: vs(6) }}>
-                  Top Rated
-                </CText>
-              </View>
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeIconBg, { backgroundColor: '#E6F9F0' }]}>
-                  <MaterialIcons name="stars" size={ms(22)} color="#10B981" />
-                </View>
-                <CText variant="caption" weight="bold" color={Colors.textPrimary} style={{ marginTop: vs(6) }}>
-                  Vibe Star
-                </CText>
-              </View>
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Back Button Footer */}
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, vs(16)) }]}>
-          <AppButton
-            variant="primary"
-            title="Back to Vibe"
-            fullWidth
-            size="lg"
-            onPress={onClose}
-            style={styles.backBtn}
-          />
         </View>
       </View>
     </Modal>
@@ -180,145 +80,135 @@ const HostProfile = ({ visible, onClose, host }) => {
 };
 
 const styles = StyleSheet.create({
-  rootContainer: {
+  overlay: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: 'rgba(10, 22, 41, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  header: {
+  dismissArea: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  card: {
+    width: SCREEN_WIDTH - ms(40),
+    backgroundColor: Colors.white,
+    borderRadius: ms(28),
+    padding: ms(24),
+    paddingTop: vs(28),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: ms(16),
+    right: ms(16),
+    width: ms(32),
+    height: ms(32),
+    borderRadius: ms(16),
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  
+  // Header
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: ms(16),
-    height: vs(64),
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(133, 108, 226, 0.08)',
+    marginBottom: vs(18),
   },
-  closeButton: {
-    width: ms(42),
-    height: ms(42),
-    borderRadius: ms(21),
-    backgroundColor: 'rgba(133, 108, 226, 0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  avatarWrap: {
+    width: ms(64),
+    height: ms(64),
+    marginRight: ms(16),
   },
-  scrollContainer: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: ms(20),
-    paddingTop: vs(20),
-  },
-  profileHeaderContainer: {
-    alignItems: 'center',
-    marginBottom: vs(24),
-  },
-  avatarGlowRing: {
-    width: ms(100),
-    height: ms(100),
-    borderRadius: ms(50),
-    padding: ms(3),
-    backgroundColor: 'rgba(133, 108, 226, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: vs(12),
-  },
-  avatar: {
+  avatarImg: {
     width: '100%',
     height: '100%',
-    borderRadius: ms(47),
+    borderRadius: ms(32),
+    backgroundColor: Colors.surface,
   },
-  name: {
-    fontSize: normFont(24),
-    marginBottom: vs(4),
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: -ms(2),
+    right: -ms(2),
+    backgroundColor: Colors.white,
+    borderRadius: ms(10),
+    padding: ms(2),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  joinedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(133, 108, 226, 0.06)',
-    paddingHorizontal: ms(10),
-    paddingVertical: vs(4),
-    borderRadius: ms(12),
+  headerTextInfo: {
+    flex: 1,
+    justifyContent: 'center',
   },
+  hostName: {
+    fontSize: normFont(22),
+    fontWeight: '800',
+    // flexDirection:'row',
+    color: Colors.textPrimary,
+    letterSpacing: -0.5,
+    marginBottom: vs(2),
+  },
+  hostJoined: {
+    fontSize: normFont(13),
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+
+  // Stats
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: vs(24),
-    gap: ms(10),
-  },
-  statCard: {
-    flex: 1,
     alignItems: 'center',
-    backgroundColor: 'rgba(133, 108, 226, 0.03)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(133, 108, 226, 0.08)',
+    backgroundColor: Colors.surface,
+    paddingVertical: vs(12),
+    paddingHorizontal: ms(16),
     borderRadius: ms(16),
-    paddingVertical: vs(14),
+    marginBottom: vs(18),
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  section: {
-    marginBottom: vs(24),
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ms(4),
   },
+  statText: {
+    fontSize: normFont(12),
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  statDot: {
+    width: ms(4),
+    height: ms(4),
+    borderRadius: ms(2),
+    backgroundColor: Colors.border,
+    marginHorizontal: ms(10),
+  },
+
+  // Headings
   sectionTitle: {
-    fontSize: normFont(16),
-    marginBottom: vs(12),
+    fontSize: normFont(12),
+    fontWeight: '800',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: vs(6),
   },
-  cardContainer: {
-    backgroundColor: 'rgba(244, 246, 249, 0.65)',
-    borderRadius: ms(16),
-    padding: ms(16),
-    borderWidth: 1,
-    borderColor: 'rgba(133, 108, 226, 0.06)',
-  },
+
+  // Bio
   bioText: {
-    lineHeight: normFont(22),
-  },
-  tagsWrapper: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: ms(8),
-  },
-  tag: {
-    backgroundColor: 'rgba(133, 108, 226, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(133, 108, 226, 0.1)',
-    paddingHorizontal: ms(14),
-    paddingVertical: vs(6),
-    borderRadius: ms(20),
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: 'rgba(133, 108, 226, 0.02)',
-    borderWidth: 1,
-    borderColor: 'rgba(133, 108, 226, 0.05)',
-    borderRadius: ms(18),
-    paddingVertical: vs(16),
-  },
-  badgeItem: {
-    alignItems: 'center',
-  },
-  badgeIconBg: {
-    width: ms(48),
-    height: ms(48),
-    borderRadius: ms(24),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footer: {
-    paddingHorizontal: ms(20),
-    paddingTop: vs(12),
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(133, 108, 226, 0.08)',
-    backgroundColor: Colors.white,
-  },
-  backBtn: {
-    borderWidth: 0,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-    borderRadius: ms(30),
+    fontSize: normFont(14),
+    color: Colors.textSecondary,
+    lineHeight: normFont(21),
+    marginBottom: vs(10), // Reduced since there's no tags below it
   },
 });
 
